@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commercial Invoice - CI-2024-001</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div class="max-w-[800px] mx-auto bg-white p-12 shadow-lg min-h-[1100px]">
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">COMMERCIAL INVOICE</h1>
+                <p class="text-gray-500">Invoice #: <span class="font-mono font-bold text-black">CI-2024-001</span></p>
+                <p class="text-gray-500">Date: <span class="font-mono text-black">October 24, 2024</span></p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-blue-800">Shenzhen Tech Mfg.</div>
+                <div class="text-sm text-gray-600">No. 88, Science Park Road</div>
+                <div class="text-sm text-gray-600">Nanshan District, Shenzhen</div>
+                <div class="text-sm text-gray-600">China, 518000</div>
+            </div>
+        </div>
+
+        <!-- Parties -->
+        <div class="grid grid-cols-2 gap-8 mb-8 border-t border-b border-gray-200 py-6">
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To / Consignee</h3>
+                <div class="font-semibold text-gray-900">NovaVision Logistics LLC</div>
+                <div class="text-sm text-gray-600">1200 Twelfth Ave S</div>
+                <div class="text-sm text-gray-600">Seattle, WA 98144</div>
+                <div class="text-sm text-gray-600">United States</div>
+                <div class="text-sm text-gray-600 mt-2">Tax ID: 91-1234567</div>
+            </div>
+            <div>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Shipment Details</h3>
+                <div class="grid grid-cols-2 gap-y-2 text-sm">
+                    <span class="text-gray-600">Port of Loading:</span>
+                    <span class="font-medium">Yantian, CN</span>
+
+                    <span class="text-gray-600">Port of Discharge:</span>
+                    <span class="font-medium">Seattle, US</span>
+
+                    <span class="text-gray-600">Vessel / Voyage:</span>
+                    <span class="font-medium">NOVA STAR / V.123</span>
+
+                    <span class="text-gray-600">Incoterms:</span>
+                    <span class="font-bold bg-yellow-100 px-1">FOB Shenzhen</span>
+
+                    <span class="text-gray-600">Bill of Lading:</span>
+                    <span class="font-medium">HBL-889922</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Items -->
+        <table class="w-full mb-8">
+            <thead>
+                <tr class="border-b-2 border-gray-900">
+                    <th class="text-left py-3 text-sm font-bold text-gray-900">Item Code</th>
+                    <th class="text-left py-3 text-sm font-bold text-gray-900">Description</th>
+                    <th class="text-right py-3 text-sm font-bold text-gray-900">Qty</th>
+                    <th class="text-right py-3 text-sm font-bold text-gray-900">Unit Price</th>
+                    <th class="text-right py-3 text-sm font-bold text-gray-900">Total</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                <tr>
+                    <td class="py-4 text-sm font-mono text-gray-600">NV-Cam-X1</td>
+                    <td class="py-4 text-sm text-gray-900">
+                        <div class="font-medium">Wireless Security Camera (1080p)</div>
+                        <div class="text-xs text-gray-500">HS Code: 8525.80</div>
+                    </td>
+                    <td class="py-4 text-sm text-right text-gray-900">500 pcs</td>
+                    <td class="py-4 text-sm text-right text-gray-900">$45.00</td>
+                    <td class="py-4 text-sm text-right font-medium text-gray-900">$22,500.00</td>
+                </tr>
+                <tr>
+                    <td class="py-4 text-sm font-mono text-gray-600">NV-Mount-02</td>
+                    <td class="py-4 text-sm text-gray-900">
+                        <div class="font-medium">Wall Mount Bracket</div>
+                        <div class="text-xs text-gray-500">HS Code: 7326.90</div>
+                    </td>
+                    <td class="py-4 text-sm text-right text-gray-900">500 pcs</td>
+                    <td class="py-4 text-sm text-right text-gray-900">$5.00</td>
+                    <td class="py-4 text-sm text-right font-medium text-gray-900">$2,500.00</td>
+                </tr>
+                <tr>
+                    <td class="py-4 text-sm font-mono text-gray-600">NV-Cable-5M</td>
+                    <td class="py-4 text-sm text-gray-900">
+                        <div class="font-medium">Power Extension Cable (5M)</div>
+                        <div class="text-xs text-gray-500">HS Code: 8544.42</div>
+                    </td>
+                    <td class="py-4 text-sm text-right text-gray-900">200 pcs</td>
+                    <td class="py-4 text-sm text-right text-gray-900">$3.50</td>
+                    <td class="py-4 text-sm text-right font-medium text-gray-900">$700.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="flex justify-end mb-12">
+            <div class="w-1/2">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-sm text-gray-600">Subtotal</span>
+                    <span class="text-sm font-medium">$25,700.00</span>
+                </div>
+                <!-- <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-sm text-gray-600">Insurance</span>
+                    <span class="text-sm font-medium">$150.00</span>
+                </div> -->
+                <div class="flex justify-between py-4">
+                    <span class="text-lg font-bold text-gray-900">TOTAL (USD)</span>
+                    <span class="text-lg font-bold text-blue-600">$25,700.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Signature -->
+        <div class="grid grid-cols-2 gap-12 mt-auto pt-12">
+            <div>
+                <p class="text-xs text-gray-500 mb-2">Declaration:</p>
+                <p class="text-xs text-gray-600 italic">We certify that this invoice is true and correct and that the
+                    contents of this shipment are as stated above. These commodities, technology, or software were
+                    exported from China in accordance with the Export Administration Regulations.</p>
+            </div>
+            <div>
+                <div class="border-b border-gray-400 mb-2 w-full h-12 flex items-end">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Signature_sample.svg/1200px-Signature_sample.svg.png"
+                        alt="Signature" class="h-10 opacity-60 -rotate-6">
+                </div>
+                <p class="text-xs font-bold text-gray-900">Authorized Signature</p>
+                <p class="text-xs text-gray-500">Shenzhen Tech Mfg.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-xs text-gray-400">
+            Page 1 of 1
+        </div>
+    </div>
+</body>
+
+</html>

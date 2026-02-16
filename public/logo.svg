@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="nova-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#FF9900" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background (Optional: remove for transparency) -->
+  <!-- <rect rs="24" width="512" height="512" fill="#09090b" /> -->
+
+  <!-- Outer Vision Ring -->
+  <circle cx="256" cy="256" r="200" stroke="url(#nova-gradient)" stroke-width="32" stroke-linecap="round" filter="url(#glow)" />
+  
+  <!-- Inner Neural Core -->
+  <circle cx="256" cy="256" r="80" fill="url(#nova-gradient)" filter="url(#glow)" />
+  
+  <!-- Network Connections -->
+  <path d="M420 256 L460 256" stroke="url(#nova-gradient)" stroke-width="24" stroke-linecap="round" />
+  <path d="M256 420 L256 460" stroke="url(#nova-gradient)" stroke-width="24" stroke-linecap="round" />
+  <path d="M92 256 L52 256" stroke="url(#nova-gradient)" stroke-width="24" stroke-linecap="round" />
+  <path d="M256 92 L256 52" stroke="url(#nova-gradient)" stroke-width="24" stroke-linecap="round" />
+  
+  <!-- Satellite Nodes -->
+  <circle cx="460" cy="256" r="16" fill="#FF9900" />
+  <circle cx="52" cy="256" r="16" fill="#7C3AED" />
+  
+</svg>

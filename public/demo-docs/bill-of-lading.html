@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill of Lading - HBL-889922</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .typewriter {
+            font-family: 'Courier Prime', monospace;
+        }
+
+        .box {
+            border: 1px solid #000;
+            padding: 4px 8px;
+            font-size: 11px;
+            height: 100%;
+        }
+
+        .box-header {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #444;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div class="max-w-[800px] mx-auto bg-white border border-gray-300 shadow-lg min-h-[1100px] text-xs relative">
+        <!-- Watermark -->
+        <div
+            class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none overflow-hidden">
+            <h1 class="text-[120px] font-bold rotate-45">ORIGINAL</h1>
+        </div>
+
+        <div class="p-8">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-bold">BILL OF LADING</h1>
+                <div class="text-right">
+                    <div class="font-bold text-lg">HBL-889922</div>
+                    <div class="text-[10px] text-gray-500">B/L No.</div>
+                </div>
+            </div>
+
+            <!-- Grid Layout -->
+            <div class="border border-black">
+                <!-- Row 1 -->
+                <div class="grid grid-cols-2 border-b border-black">
+                    <div class="box border-r border-black h-32">
+                        <div class="box-header">1. Shipper / Exporter</div>
+                        <div class="typewriter text-sm mt-1">
+                            SHENZHEN TECH MFG.<br>
+                            NO. 88, SCIENCE PARK ROAD<br>
+                            NANSHAN DIST, SHENZHEN<br>
+                            CHINA
+                        </div>
+                    </div>
+                    <div class="box h-32">
+                        <div class="box-header">2. Booking No. / Reference</div>
+                        <div class="typewriter text-lg font-bold">BK-2024-9981</div>
+                        <div class="mt-4">
+                            <div class="box-header">Export References</div>
+                            <div class="typewriter">INV# CI-2024-001</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="grid grid-cols-2 border-b border-black">
+                    <div class="box border-r border-black h-32">
+                        <div class="box-header">3. Consignee</div>
+                        <div class="typewriter text-sm mt-1">
+                            NOVAVISION LOGISTICS LLC<br>
+                            1200 TWELFTH AVE S<br>
+                            SEATTLE, WA 98144<br>
+                            UNITED STATES
+                        </div>
+                    </div>
+                    <div class="box h-32 flex flex-col justify-between">
+                        <div class="box-header">4. Forwarding Agent</div>
+                        <div class="typewriter">GLOBAL FREIGHT SYSTEMS INC.</div>
+                        <div class="mt-auto text-center border-t border-dotted border-gray-400 pt-2">
+                            <div class="text-2xl font-bold tracking-widest text-gray-300">LOGO</div>
+                            <div class="text-[10px] font-bold">OCEAN NETWORK EXPRESS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="grid grid-cols-4 border-b border-black">
+                    <div class="box border-r border-black h-16">
+                        <div class="box-header">5. Vessel / Voyage</div>
+                        <div class="typewriter font-bold">NOVA STAR / V.123</div>
+                    </div>
+                    <div class="box border-r border-black h-16">
+                        <div class="box-header">6. Port of Loading</div>
+                        <div class="typewriter">YANTIAN, CN</div>
+                    </div>
+                    <div class="box border-r border-black h-16">
+                        <div class="box-header">7. Port of Discharge</div>
+                        <div class="typewriter">SEATTLE, US</div>
+                    </div>
+                    <div class="box h-16">
+                        <div class="box-header">8. Place of Delivery</div>
+                        <div class="typewriter">SEATTLE, US</div>
+                    </div>
+                </div>
+
+                <!-- Goods Table Headers -->
+                <div class="grid grid-cols-12 border-b border-black bg-gray-50 h-8 items-center">
+                    <div
+                        class="col-span-2 text-center text-[9px] font-bold border-r border-black h-full flex items-center justify-center">
+                        MARKS & NOS</div>
+                    <div
+                        class="col-span-2 text-center text-[9px] font-bold border-r border-black h-full flex items-center justify-center">
+                        NO. OF PKGS</div>
+                    <div
+                        class="col-span-6 text-center text-[9px] font-bold border-r border-black h-full flex items-center justify-center">
+                        DESCRIPTION OF PACKAGES AND GOODS</div>
+                    <div class="col-span-2 text-center text-[9px] font-bold h-full flex items-center justify-center">
+                        GROSS WEIGHT</div>
+                </div>
+
+                <!-- Goods Body -->
+                <div class="grid grid-cols-12 h-64 border-b border-black bg-white">
+                    <div class="col-span-2 p-2 border-r border-black typewriter text-[10px] text-center">
+                        N/M<br>
+                        <br>
+                        CONTAINER:<br>
+                        TCLU-4459012<br>
+                        SEAL:<br>
+                        992100
+                    </div>
+                    <div class="col-span-2 p-2 border-r border-black typewriter text-[10px] text-center">
+                        700<br>CARTONS
+                    </div>
+                    <div class="col-span-6 p-2 border-r border-black typewriter text-[10px]">
+                        <strong>SHIPPER'S LOAD, COUNT & SEAL</strong><br><br>
+                        CONSUMER ELECTRONICS<br>
+                        - SECURITY CAMERAS<br>
+                        - BRACKETS<br>
+                        - CABLES<br>
+                        <br>
+                        FREIGHT PREPAID<br>
+                        <br>
+                        <span class="text-[9px]">HS CODES: 8525.80, 7326.90, 8544.42</span>
+                    </div>
+                    <div class="col-span-2 p-2 typewriter text-[10px] text-center">
+                        4,500.00<br>KGS
+                    </div>
+                </div>
+
+                <!-- Totals -->
+                <div class="grid grid-cols-12 border-b border-black bg-gray-50 h-8 items-center">
+                    <div class="col-span-4 border-r border-black h-full"></div>
+                    <div
+                        class="col-span-6 text-right pr-4 text-[9px] font-bold border-r border-black h-full flex items-center justify-end">
+                        TOTAL:</div>
+                    <div
+                        class="col-span-2 text-center text-[10px] font-bold h-full flex items-center justify-center typewriter">
+                        4,500 KGS</div>
+                </div>
+
+                <!-- Footer Row -->
+                <div class="grid grid-cols-2">
+                    <div class="box border-r border-black h-40">
+                        <div class="box-header">Freight & Charges</div>
+                        <div class="mt-2 text-[10px]">
+                            <div class="flex justify-between mb-1"><span>OCEAN FREIGHT</span> <span>PREPAID</span></div>
+                            <div class="flex justify-between mb-1"><span>THC / DOC FEES</span> <span>PREPAID</span>
+                            </div>
+                            <div class="flex justify-between font-bold mt-2 pt-2 border-t border-gray-300"><span>TOTAL
+                                    PREPAID</span> <span>USD 4,200.00</span></div>
+                        </div>
+                    </div>
+                    <div class="box h-40">
+                        <div class="box-header">Date & Place of Issue</div>
+                        <div class="typewriter mb-4">OCT 24, 2024 - SHENZHEN</div>
+
+                        <div class="box-header">Signed for the Carrier</div>
+                        <div class="mt-4 border-b border-black w-3/4 flex items-end h-8">
+                            <span class="text-[9px] text-gray-400 italic">Ocean Network Express</span>
+                        </div>
+                        <div class="text-[9px] mt-1">AS AGENT FOR THE CARRIER: OCEAN NETWORK EXPRESS</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
