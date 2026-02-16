@@ -2,10 +2,34 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Brain, Mic, Workflow, Zap, PlayCircle, Rocket, Shield, Globe, Box, Layers } from "lucide-react";
+import { ArrowRight, Brain, Mic, Workflow, PlayCircle, Rocket, Globe, Box, Shield, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRef } from "react";
+import { ScannerVisual, TerminalVisual, WaveformVisual } from "@/components/demo/SceneVisuals";
+
+// Spring Physics for "Cinematic" feel
+const SPRING_TRANSITION: any = { type: "spring", stiffness: 300, damping: 30 };
+
+const STAGGER_CONTAINER: any = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1,
+            delayChildren: 0.2
+        }
+    }
+};
+
+const FADE_UP_ITEM: any = {
+    hidden: { opacity: 0, y: 30 },
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: SPRING_TRANSITION
+    }
+};
 
 export default function LandingPage() {
     const targetRef = useRef(null);
@@ -58,9 +82,9 @@ export default function LandingPage() {
                 <section ref={targetRef} className="max-w-5xl mx-auto text-center mb-32 relative">
                     <motion.div style={{ opacity, scale }} className="space-y-8">
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
+                            transition={SPRING_TRANSITION}
                         >
                             <Badge variant="outline" className="px-4 py-1.5 border-violet-500/30 bg-violet-500/10 text-violet-300 rounded-full text-sm font-medium backdrop-blur-md mb-6 inline-flex items-center gap-2 hover:bg-violet-500/20 transition-colors cursor-default">
                                 <span className="relative flex h-2 w-2">
@@ -72,9 +96,9 @@ export default function LandingPage() {
                         </motion.div>
 
                         <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.1 }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ ...SPRING_TRANSITION, delay: 0.1 }}
                             className="text-6xl md:text-8xl font-bold tracking-tighter leading-[1.1]"
                         >
                             Turn Supply Chain <br />
@@ -86,7 +110,7 @@ export default function LandingPage() {
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
+                            transition={{ ...SPRING_TRANSITION, delay: 0.2 }}
                             className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed"
                         >
                             The first Autonomous Logistics OS powered by Multimodal AI.
@@ -96,7 +120,7 @@ export default function LandingPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.3 }}
+                            transition={{ ...SPRING_TRANSITION, delay: 0.3 }}
                             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8"
                         >
                             <Link href="/dashboard">
@@ -105,8 +129,8 @@ export default function LandingPage() {
                                 </Button>
                             </Link>
                             <Link href="/demo">
-                                <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-white/10 hover:bg-white/5 hover:text-white hover:border-white/20 transition-all">
-                                    <PlayCircle className="mr-2 h-5 w-5 text-zinc-400" /> Watch Demo
+                                <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full border-white/10 hover:bg-white/5 hover:text-white hover:border-white/20 transition-all group">
+                                    <PlayCircle className="mr-2 h-5 w-5 text-zinc-400 group-hover:text-white transition-colors" /> Watch Demo
                                 </Button>
                             </Link>
                         </motion.div>
@@ -115,22 +139,33 @@ export default function LandingPage() {
 
                 {/* Features Grid ("Bento Box") */}
                 <section className="max-w-6xl mx-auto mb-32">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <motion.div
+                        variants={STAGGER_CONTAINER}
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    >
 
                         {/* Card 1: Vision */}
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1 }}
-                            className="group relative p-8 rounded-3xl bg-zinc-900/40 border border-white/5 hover:border-violet-500/30 overflow-hidden transition-all hover:bg-zinc-900/60"
+                            variants={FADE_UP_ITEM}
+                            className="group relative p-8 rounded-3xl bg-zinc-900/40 border border-white/5 hover:border-violet-500/30 overflow-hidden transition-all hover:bg-zinc-900/60 flex flex-col"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative z-10">
-                                <div className="h-12 w-12 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:bg-violet-500 group-hover:text-white transition-all duration-500">
-                                    <Brain className="h-6 w-6" />
+
+                            {/* Visual Container */}
+                            <div className="h-48 mb-6 rounded-2xl bg-black/20 border border-white/5 overflow-hidden flex items-center justify-center">
+                                <div className="scale-75 origin-center">
+                                    <ScannerVisual />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Nova Vision</h3>
+                            </div>
+
+                            <div className="relative z-10 flex-1 flex flex-col">
+                                <h3 className="text-2xl font-bold mb-3 flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-violet-500/10 text-violet-400"><Brain className="h-5 w-5" /></div>
+                                    Nova Vision
+                                </h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
                                     Instantly analyze Commercial Invoices and BOLs. Support for 25+ document types with 99.8% extraction accuracy using <span className="text-violet-400">Nova 2 Pro</span>.
                                 </p>
@@ -141,22 +176,27 @@ export default function LandingPage() {
                             </div>
                         </motion.div>
 
-                        {/* Card 2: Act (Span 2 on mobile, 1 on desktop for symmetry in 3-col) */}
+                        {/* Card 2: Act */}
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.2 }}
-                            className="group relative p-8 rounded-3xl bg-zinc-900/40 border border-white/5 hover:border-cyan-500/30 overflow-hidden transition-all hover:bg-zinc-900/60"
+                            variants={FADE_UP_ITEM}
+                            className="group relative p-8 rounded-3xl bg-zinc-900/40 border border-white/5 hover:border-cyan-500/30 overflow-hidden transition-all hover:bg-zinc-900/60 flex flex-col"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative z-10">
-                                <div className="h-12 w-12 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:bg-cyan-500 group-hover:text-white transition-all duration-500">
-                                    <Workflow className="h-6 w-6" />
+
+                            {/* Visual Container */}
+                            <div className="h-48 mb-6 rounded-2xl bg-black/20 border border-white/5 overflow-hidden flex items-center justify-center">
+                                <div className="scale-75 origin-center w-full px-4">
+                                    <TerminalVisual />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Nova Act</h3>
+                            </div>
+
+                            <div className="relative z-10 flex-1 flex flex-col">
+                                <h3 className="text-2xl font-bold mb-3 flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><Workflow className="h-5 w-5" /></div>
+                                    Nova Act
+                                </h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Autonomous execution. Takes extracted data and generates compliant filing payloads for Port Authorities and Customs via <span className="text-cyan-400">Nova 2 Pro</span> reasoning agents.
+                                    Autonomous execution. Takes extracted data and generates compliant filing payloads via <span className="text-cyan-400">Nova 2 Pro</span> reasoning agents.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -167,20 +207,25 @@ export default function LandingPage() {
 
                         {/* Card 3: Sonic */}
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.3 }}
-                            className="group relative p-8 rounded-3xl bg-zinc-900/40 border border-white/5 hover:border-pink-500/30 overflow-hidden transition-all hover:bg-zinc-900/60"
+                            variants={FADE_UP_ITEM}
+                            className="group relative p-8 rounded-3xl bg-zinc-900/40 border border-white/5 hover:border-pink-500/30 overflow-hidden transition-all hover:bg-zinc-900/60 flex flex-col"
                         >
                             <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative z-10">
-                                <div className="h-12 w-12 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:bg-pink-500 group-hover:text-white transition-all duration-500">
-                                    <Mic className="h-6 w-6" />
+
+                            {/* Visual Container */}
+                            <div className="h-48 mb-6 rounded-2xl bg-black/20 border border-white/5 overflow-hidden flex items-center justify-center">
+                                <div className="scale-75 origin-center w-full px-4">
+                                    <WaveformVisual />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Nova Voice</h3>
+                            </div>
+
+                            <div className="relative z-10 flex-1 flex flex-col">
+                                <h3 className="text-2xl font-bold mb-3 flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400"><Mic className="h-5 w-5" /></div>
+                                    Nova Voice
+                                </h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Hands-free warehouse operations. Workers simply speak to verify stock and shipping status, powered by ultra-low latency <span className="text-pink-400">Nova 2 Pro</span> Voice Intelligence.
+                                    Hands-free warehouse operations. Workers simply speak to verify stock, powered by ultra-low latency <span className="text-pink-400">Nova 2 Pro</span>.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -188,7 +233,7 @@ export default function LandingPage() {
                                 </div>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 </section>
 
                 {/* Social Proof Marquee */}

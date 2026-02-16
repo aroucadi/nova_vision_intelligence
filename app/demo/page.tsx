@@ -128,11 +128,11 @@ export default function DemoPage() {
                     className="mb-12"
                 >
                     <Link
-                        href="/dashboard"
+                        href="/"
                         className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition mb-6"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        Back to Dashboard
+                        Back to Home
                     </Link>
 
                     <div className="text-center">
@@ -205,9 +205,9 @@ export default function DemoPage() {
 
                 {/* Footer */}
                 <div className="flex justify-center mt-12">
-                    <Link href="/dashboard">
+                    <Link href="/">
                         <Button variant="outline" className="rounded-full border-zinc-800 text-zinc-400 hover:text-white">
-                            Skip Demo & Go to Dashboard
+                            Skip Demo & Go to Home
                         </Button>
                     </Link>
                 </div>
