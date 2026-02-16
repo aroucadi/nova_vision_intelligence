@@ -7,29 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRef } from "react";
 import { ScannerVisual, TerminalVisual, WaveformVisual } from "@/components/demo/SceneVisuals";
-
-// Spring Physics for "Cinematic" feel
-const SPRING_TRANSITION: any = { type: "spring", stiffness: 300, damping: 30 };
-
-const STAGGER_CONTAINER: any = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1,
-            delayChildren: 0.2
-        }
-    }
-};
-
-const FADE_UP_ITEM: any = {
-    hidden: { opacity: 0, y: 30 },
-    show: {
-        opacity: 1,
-        y: 0,
-        transition: SPRING_TRANSITION
-    }
-};
+import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM } from "@/components/motion/constants";
 
 export default function LandingPage() {
     const targetRef = useRef(null);
@@ -84,7 +62,7 @@ export default function LandingPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={SPRING_TRANSITION}
+                            transition={SPRING_PHYSICS}
                         >
                             <Badge variant="outline" className="px-4 py-1.5 border-violet-500/30 bg-violet-500/10 text-violet-300 rounded-full text-sm font-medium backdrop-blur-md mb-6 inline-flex items-center gap-2 hover:bg-violet-500/20 transition-colors cursor-default">
                                 <span className="relative flex h-2 w-2">
@@ -98,7 +76,7 @@ export default function LandingPage() {
                         <motion.h1
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            transition={{ ...SPRING_TRANSITION, delay: 0.1 }}
+                            transition={{ ...SPRING_PHYSICS, delay: 0.1 }}
                             className="text-6xl md:text-8xl font-bold tracking-tighter leading-[1.1]"
                         >
                             Turn Supply Chain <br />
@@ -110,7 +88,7 @@ export default function LandingPage() {
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ ...SPRING_TRANSITION, delay: 0.2 }}
+                            transition={{ ...SPRING_PHYSICS, delay: 0.2 }}
                             className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed"
                         >
                             The first Autonomous Logistics OS powered by Multimodal AI.
@@ -120,7 +98,7 @@ export default function LandingPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ ...SPRING_TRANSITION, delay: 0.3 }}
+                            transition={{ ...SPRING_PHYSICS, delay: 0.3 }}
                             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8"
                         >
                             <Link href="/dashboard">
