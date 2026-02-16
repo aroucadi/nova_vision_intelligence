@@ -132,7 +132,7 @@ export default function LandingPage() {
                                 </div>
                                 <h3 className="text-2xl font-bold mb-3">Nova Vision</h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Instantly analyze Commercial Invoices and BOLs. Support for 25+ document types with 99.8% extraction accuracy using <span className="text-violet-400">Nova 2 Lite</span>.
+                                    Instantly analyze Commercial Invoices and BOLs. Support for 25+ document types with 99.8% extraction accuracy using <span className="text-violet-400">Nova 2 Pro</span>.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -156,11 +156,11 @@ export default function LandingPage() {
                                 </div>
                                 <h3 className="text-2xl font-bold mb-3">Nova Act</h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Autonomous execution. Takes extracted data and files directly to Port Authorities and Customs via <span className="text-cyan-400">Nova Pro</span> reasoning agents.
+                                    Autonomous execution. Takes extracted data and generates compliant filing payloads for Port Authorities and Customs via <span className="text-cyan-400">Nova 2 Pro</span> reasoning agents.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Active • Zero-touch filing
+                                    Active • Automated Payload Gen
                                 </div>
                             </div>
                         </motion.div>
@@ -178,9 +178,9 @@ export default function LandingPage() {
                                 <div className="h-12 w-12 bg-zinc-800 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-white/10 group-hover:bg-pink-500 group-hover:text-white transition-all duration-500">
                                     <Mic className="h-6 w-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Nova Sonic</h3>
+                                <h3 className="text-2xl font-bold mb-3">Nova Voice</h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Hands-free warehouse operations. Workers simply speak to verify stock and shipping status, powered by ultra-low latency <span className="text-pink-400">Nova Sonic</span>.
+                                    Hands-free warehouse operations. Workers simply speak to verify stock and shipping status, powered by ultra-low latency <span className="text-pink-400">Nova 2 Pro</span> Voice Intelligence.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />

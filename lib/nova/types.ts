@@ -49,7 +49,9 @@ export interface NovaConverseResponse {
 // Source: https://docs.aws.amazon.com/nova/latest/nova2-userguide/getting-started-api.html
 export const NOVA_MODELS = {
   /** Nova 2 Lite: text, images, video, documents → text. Extended thinking supported. */
-  LITE: "us.amazon.nova-2-lite-v1:0",
+  LITE: "us.amazon.nova-lite-v1:0",
+  /** Nova 2 Pro: The flagship model. Best for complex reasoning, visual analysis, and 100% accuracy tasks. */
+  PRO: "us.amazon.nova-pro-v1:0",
   /** Nova 2 Sonic: speech-to-speech real-time voice. Uses InvokeModelWithBidirectionalStream. */
   SONIC: "amazon.nova-2-sonic-v1:0",
   /** Nova Multimodal Embeddings (Switched to Titan G1 for maximum compatibility) */

@@ -9,10 +9,10 @@ import {
 import { NOVA_MODELS, type ImageFormat } from "./types";
 
 /**
- * Amazon Nova 2 Lite Client
+ * Amazon Nova 2 Client (Upgraded to Pro)
  *
  * Uses the Converse API for unified interaction.
- * Model: us.amazon.nova-2-lite-v1:0
+ * Model: us.amazon.nova-pro-v1:0 (Flagship Intelligence)
  * Capabilities: text, images, video, documents (up to 1M tokens context)
  * Features: extended thinking, structured output, tool use
  */
@@ -54,7 +54,7 @@ export class NovaClient {
         } = options;
 
         const input: ConverseCommandInput = {
-            modelId: NOVA_MODELS.LITE,
+            modelId: NOVA_MODELS.PRO,
             messages,
             inferenceConfig: {
                 maxTokens,
