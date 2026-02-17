@@ -25,7 +25,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        // Simple validation or schema check here if needed
+
+        // Handle Seeding
+        if (body.action === "seed") {
+            await customsService.seedData();
+            return NextResponse.json({ success: true, message: "Customs Registry seeded with demo data" });
+        }
+
+        // Handle Filing (Standard)
         const newEntry = await customsService.fileEntry(body);
         return NextResponse.json(newEntry);
     } catch (error: unknown) {

@@ -52,6 +52,57 @@ export class CustomsService {
         }));
     }
 
+    async seedData(): Promise<void> {
+        const entries: CustomsEntry[] = [
+            {
+                entryNumber: "111-1234567-8",
+                filerCode: "999",
+                importer: "TechImports LLC",
+                portOfEntry: "LAX",
+                timestamp: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+                status: "RELEASED",
+                items: [
+                    { description: "Wireless Security Cameras", htsus: "8525.80.30", value: 5000, quantity: 50, unit_price: 100 }
+                ],
+                totalDuty: 0,
+                documents: ["s3://nova-uploads/invoice_123.pdf"]
+            },
+            {
+                entryNumber: "111-8765432-1",
+                filerCode: "999",
+                importer: "Global Textiles Inc",
+                portOfEntry: "NYC",
+                timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+                status: "HELD",
+                items: [
+                    { description: "Cotton T-Shirts", htsus: "6109.10.00", value: 2500, quantity: 500, unit_price: 5 }
+                ],
+                totalDuty: 412.50, // 16.5%
+                documents: ["s3://nova-uploads/invoice_456.pdf"]
+            },
+            {
+                entryNumber: "111-9988776-5",
+                filerCode: "999",
+                importer: "Industrial Parts Co",
+                portOfEntry: "CHI",
+                timestamp: new Date().toISOString(), // Today
+                status: "FILED",
+                items: [
+                    { description: "Hydraulic Valves", htsus: "8481.20.00", value: 15000, quantity: 15, unit_price: 1000 }
+                ],
+                totalDuty: 0,
+                documents: ["s3://nova-uploads/invoice_789.pdf"]
+            }
+        ];
+
+        for (const entry of entries) {
+            await dynamoDb.send(new PutCommand({
+                TableName: TABLE_NAME,
+                Item: entry,
+            }));
+        }
+    }
+
     async getAllEntries(): Promise<CustomsEntry[]> {
         // Scan is okay for a demo/sandbox with limited data
         const result = await dynamoDb.send(new ScanCommand({

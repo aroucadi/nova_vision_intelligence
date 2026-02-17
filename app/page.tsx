@@ -214,16 +214,7 @@ export default function LandingPage() {
                     </motion.div>
                 </section>
 
-                {/* Social Proof Marquee */}
-                <section className="border-t border-white/5 pt-16 pb-20">
-                    <p className="text-center text-sm font-semibold text-zinc-500 uppercase tracking-widest mb-12">Trusted by Global Logistics Leaders</p>
-                    <div className="flex flex-wrap justify-center gap-12 md:gap-24 opacity-40 grayscale pointer-events-none select-none">
-                        <div className="flex items-center gap-3 text-2xl font-black text-white"><Globe className="h-8 w-8" /> ATLAS LOGISTICS</div>
-                        <div className="flex items-center gap-3 text-2xl font-black text-white"><Box className="h-8 w-8" /> TYCHO FREIGHT</div>
-                        <div className="flex items-center gap-3 text-2xl font-black text-white"><Shield className="h-8 w-8" /> GUARDIAN SHIPPING</div>
-                        <div className="flex items-center gap-3 text-2xl font-black text-white"><Layers className="h-8 w-8" /> STRATUM CHAIN</div>
-                    </div>
-                </section>
+
             </main>
         </div>
     );

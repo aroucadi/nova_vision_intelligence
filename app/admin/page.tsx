@@ -62,11 +62,17 @@ export default function AdminDashboard() {
     const handleSeed = async () => {
         setIsLoading(true);
         try {
-            await fetch("/api/sandbox/warehouse", {
-                method: "POST",
-                body: JSON.stringify({ action: "seed" })
-            });
-            toast.success("Warehouse seeded successfully");
+            await Promise.all([
+                fetch("/api/sandbox/warehouse", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "seed" })
+                }),
+                fetch("/api/sandbox/customs", {
+                    method: "POST",
+                    body: JSON.stringify({ action: "seed" })
+                })
+            ]);
+            toast.success("System seeded with demo data");
             fetchData();
         } catch (error) {
             toast.error("Seed failed");

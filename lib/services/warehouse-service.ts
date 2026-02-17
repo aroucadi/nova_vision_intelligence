@@ -65,9 +65,18 @@ export class WarehouseService {
     async seedData(): Promise<void> {
         // Initial seed if table is empty
         const items: WarehouseItem[] = [
+            // Electronics
             { sku: "WC-1080P", name: "Wireless Security Camera (1080p)", quantity: 50, location: "B-04-12", status: "IN_STOCK", lastUpdated: new Date().toISOString() },
             { sku: "MB-STEEL", name: "Wall Mount Bracket", quantity: 120, location: "A-01-05", status: "IN_STOCK", lastUpdated: new Date().toISOString() },
             { sku: "CB-5M", name: "Power Extension Cable (5M)", quantity: 5, location: "C-12-01", status: "LOW_STOCK", lastUpdated: new Date().toISOString() },
+            { sku: "LIT-ION-2000", name: "Lithium-Ion Battery Pack (2000mAh)", quantity: 200, location: "H-09-02", status: "IN_STOCK", lastUpdated: new Date().toISOString() },
+
+            // Apparel / Textiles
+            { sku: "TS-COT-L-BLK", name: "Cotton T-Shirt (L, Black)", quantity: 500, location: "T-03-01", status: "IN_STOCK", lastUpdated: new Date().toISOString() },
+            { sku: "JEAN-DNM-32", name: "Denim Jeans (32W)", quantity: 0, location: "T-04-05", status: "OUT_OF_STOCK", lastUpdated: new Date().toISOString() },
+
+            // Industrial
+            { sku: "VALVE-HYD-X", name: "Hydraulic Valve (X-Series)", quantity: 15, location: "I-02-10", status: "IN_STOCK", lastUpdated: new Date().toISOString() },
         ];
 
         for (const item of items) {
