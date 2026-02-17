@@ -25,6 +25,8 @@ import {
 } from "@aws-sdk/client-bedrock-runtime";
 import { NOVA_MODELS } from "./types";
 import { registry } from "@/lib/agents/registry";
+import { pathwayContext } from "@/lib/context/global-pathway";
+import { claimsAgent } from "@/lib/agents/claims";
 
 const client = new BedrockRuntimeClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -62,21 +64,61 @@ export async function processVoiceQuery(
         // REAL LOOKUP: Check our simulated "Customs DB"
         const entry = await registry.getEntry(contextId);
 
+        // GLOBAL PATHWAY: Check for proactive alerts (The "Black Hole" fix)
+        const pathway = await pathwayContext.getContext(contextId);
+
         if (entry) {
             contextStr += `\n\nCONTEXT: The user is asking about Customs Entry #${entry.entryNumber}.
             Current Status: ${entry.status} (Verified in Registry).
             Filer Code: ${entry.filerCode}.
             Import Date: ${entry.timestamp}.
             Items: ${entry.items.map(i => `${i.quantity || 1}x ${i.description}`).join(", ")}.
-            Total Duty: $${entry.totalDuty.toFixed(2)}.
-            
-            ${entry.status === "RELEASED"
-                    ? "ACTIONABLE: The goods are released. You can authorize the warehouse team to dispatch the trucks."
-                    : "ACTIONABLE: The goods are NOT yet released. Do not dispatch."}`;
+            Total Duty: $${entry.totalDuty.toFixed(2)}.`;
+
+            // Inject Pathway Alerts
+            if (pathway && pathway.alerts.length > 0) {
+                contextStr += `\n\n⚠️ IMPORTANT ALERTS (Notify User Immediately):
+                 ${pathway.alerts.map(a => `- ${a}`).join("\n")}`;
+            }
+
+            contextStr += `\n\n${entry.status === "RELEASED"
+                ? "ACTIONABLE: The goods are released. You can authorize the warehouse team to dispatch the trucks."
+                : "ACTIONABLE: The goods are NOT yet released. Do not dispatch."}`;
         } else {
             // Fallback if ID is provided but not found (e.g. from a fresh restart without persistence)
             contextStr += `\n\nCONTEXT: The user is asking about Customs Entry #${contextId}, but it was not found in the active registry. 
             It might be a legacy entry or the system was restarted. Advising user to re-file or check the ID.`;
+        }
+    }
+
+    // === WRITE ACTION: Discrepancy Reporting ===
+    // Simple intent detection for the demo (Regex-based is faster than an extra LLM hop)
+    // Looking for: "I count X units" or "We only received X"
+    const discrepancyMatch = transcript.match(/count\s+(\d+)|received\s+(\d+)|only\s+(\d+)/i);
+    if (contextId && discrepancyMatch) {
+        const observedCount = parseInt(discrepancyMatch[1] || discrepancyMatch[2] || discrepancyMatch[3]);
+
+        // Mock "Expected" - in real app we'd get this from the `entry` above
+        const expectedCount = 100;
+
+        if (observedCount < expectedCount) {
+            console.log(`[Sonic] Discrepancy Detected: Observed ${observedCount}, Expected ${expectedCount}`);
+
+            // 1. Update Global Context
+            const discrepancy = { expected: expectedCount, actual: observedCount, item: "Units", reportedAt: new Date().toISOString() };
+            await pathwayContext.reportDiscrepancy(contextId, discrepancy);
+
+            // 2. Trigger Claims Agent
+            const claimDraft = await claimsAgent.draftClaim(contextId, discrepancy);
+
+            // 3. Override standard Nova response (or inject it)
+            // We return a direct response to ensure the user gets immediate feedback
+            return {
+                transcript: audioBase64 ? "[Audio Input]" : transcript,
+                answer: `I've logged the discrepancy. You counted ${observedCount}, but the manifest expects ${expectedCount}. I have updated the status to "DISCREPANCY" and drafted a claim email to the vendor for the ${expectedCount - observedCount} missing units.`,
+                model: "Nova 2 Pro (Agentic Action)",
+                processingTimeMs: Date.now() - start,
+            };
         }
     }
 

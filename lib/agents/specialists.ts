@@ -115,12 +115,14 @@ export class ExtractorAgent extends BaseAgent {
     }
 }
 
+import { pathwayContext } from "@/lib/context/global-pathway";
+
 export class ComplianceAgent extends BaseAgent {
     readonly id = "compliance";
     readonly name = "Trade Compliance Officer";
     readonly description = "Checks against sanctions lists, hazardous materials, and export controls";
 
-    async run(context: { base64: string; format: FileFormat; filename: string; extractionData?: unknown }): Promise<AgentResponse> {
+    async run(context: { base64: string; format: FileFormat; filename: string; extractionData?: ExtractionData }): Promise<AgentResponse> {
         let prompt = PROMPTS.compliance as string;
 
         // Context Injection: Feed extracted entities to the Compliance Officer
@@ -135,7 +137,29 @@ INSTRUCTION:
 </context_injection>`;
         }
 
-        return this.callNova(prompt, context.base64, context.format, context.filename);
+        const response = await this.callNova(prompt, context.base64, context.format, context.filename);
+
+        // PROACTIVE NOTIFICATION LOGIC
+        if (context.extractionData?.invoice_number) {
+            const shipmentId = context.extractionData.invoice_number;
+            const text = response.data as string;
+
+            // Heuristic detection of risk for the demo
+            // In production, Nova would return a structured Risk Score.
+            const isHighRisk = text.toLowerCase().includes("high risk") ||
+                text.toLowerCase().includes("sanction") ||
+                text.toLowerCase().includes("ambiguous") ||
+                text.toLowerCase().includes("inspection");
+
+            if (isHighRisk) {
+                console.log(`[ComplianceAgent] High Risk detected for ${shipmentId}. Triggering Proactive Notification.`);
+                await pathwayContext.updateStatus(shipmentId, "DELAYED", "Compliance Flag: Inspection Likely");
+            } else {
+                await pathwayContext.updateStatus(shipmentId, "VERIFIED", "Compliance Clear");
+            }
+        }
+
+        return response;
     }
 }
 

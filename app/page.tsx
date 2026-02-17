@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useRef } from "react";
 import { ScannerVisual, TerminalVisual, WaveformVisual } from "@/components/demo/SceneVisuals";
 import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM } from "@/components/motion/constants";
+import { Player } from "@remotion/player";
+import { WorkflowLoop } from "@/remotion/WorkflowLoop";
 
 export default function LandingPage() {
     const targetRef = useRef(null);
@@ -112,6 +114,43 @@ export default function LandingPage() {
                                 </Button>
                             </Link>
                         </motion.div>
+                    </motion.div>
+                </section>
+
+                {/* Remotion Workflow Loop */}
+                <section className="max-w-5xl mx-auto mb-32">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={SPRING_PHYSICS}
+                        viewport={{ once: true }}
+                        className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden shadow-2xl shadow-violet-500/10"
+                    >
+                        <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    <Layers className="text-violet-400" /> The Agentic Loop
+                                </h2>
+                                <p className="text-zinc-400 text-sm">Real-time orchestrated workflow from Document to Voice.</p>
+                            </div>
+                            <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10">Live Render</Badge>
+                        </div>
+                        <div className="aspect-video w-full bg-zinc-900/50 relative">
+                            <Player
+                                component={WorkflowLoop}
+                                durationInFrames={300}
+                                compositionWidth={1280}
+                                compositionHeight={720}
+                                fps={30}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                }}
+                                controls
+                                loop
+                                autoPlay
+                            />
+                        </div>
                     </motion.div>
                 </section>
 

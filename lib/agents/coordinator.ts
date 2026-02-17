@@ -14,6 +14,7 @@ import {
 } from "./specialists";
 
 import { InMemoryStateManager, PipelineStateManager, DynamoDBStateManager } from "./state-manager";
+import { pathwayContext } from "@/lib/context/global-pathway";
 
 export class AgentCoordinator {
     private analyzer = new AnalyzerAgent();
@@ -113,6 +114,12 @@ export class AgentCoordinator {
             // Capture the extracted data for Context Injection
             // If extraction failed, we pass null, and downstream agents fall back to raw analysis
             const extractedContext = extractorResult.success ? (extractorResult.data as ExtractionData) : undefined;
+
+            // GLOBAL PATHWAY: Initialize Shipment Lifecycle
+            if (extractedContext?.invoice_number) {
+                console.log(`[Coordinator] Initializing Global Pathway for Shipment: ${extractedContext.invoice_number}`);
+                await pathwayContext.initializeShipment(extractedContext.invoice_number);
+            }
 
 
             // === PHASE 2: REASONING (Parallel) ===
