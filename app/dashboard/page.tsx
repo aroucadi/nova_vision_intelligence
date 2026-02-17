@@ -14,6 +14,8 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useGlobalPathway } from "@/context/GlobalPathwayContext";
 import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM, SCALE_UP_ITEM } from "@/components/motion/constants";
+import { Player } from "@remotion/player";
+import { DashboardPulse } from "@/remotion/DashboardPulse";
 
 export default function DashboardPage() {
   const { metrics, activityLog } = useGlobalPathway();
@@ -56,17 +58,46 @@ export default function DashboardPage() {
           animate="show"
         >
           {/* Key Metrics (Real-time) */}
-          <motion.div variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+          <motion.div variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12">
             {[
               { label: "Nova Vision Processed", value: `${metrics.processedDocs} Docs`, sub: "Last 24h", icon: <Brain className="h-5 w-5 text-violet-400" />, color: "violet" },
               { label: "Nova Act Filings", value: `${metrics.filings} Entries`, sub: "98% Success", icon: <Zap className="h-5 w-5 text-cyan-400" />, color: "cyan" },
               { label: "Compliance Checks", value: `${metrics.flagged} Flagged`, sub: "Requires Review", icon: <AlertCircle className="h-5 w-5 text-amber-400" />, color: "amber" },
               { label: "Voice Queries", value: `${metrics.voiceOps} Ops`, sub: "Floor Staff", icon: <Mic className="h-5 w-5 text-pink-400" />, color: "pink" }
             ].map((metric) => (
-              <motion.div key={metric.label} variants={FADE_UP_ITEM}>
+              <motion.div key={metric.label} variants={FADE_UP_ITEM} className="col-span-1">
                 <MetricCard label={metric.label} value={metric.value} sub={metric.sub} icon={metric.icon} />
               </motion.div>
             ))}
+
+            {/* LIVE SYSTEM PULSE WIDGET */}
+            <motion.div variants={FADE_UP_ITEM} className="col-span-1">
+              <div className="h-full rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden relative group">
+                <div className="absolute inset-0 z-0">
+                  <Player
+                    component={DashboardPulse}
+                    durationInFrames={120}
+                    compositionWidth={300}
+                    compositionHeight={150}
+                    fps={30}
+                    style={{ width: '100%', height: '100%' }}
+                    autoPlay
+                    loop
+                    controls={false}
+                  />
+                </div>
+                {/* Overlay Gradient to make text readable/integrated */}
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/90 to-transparent z-10" />
+
+                <div className="absolute bottom-0 left-0 p-4 z-20 w-full">
+                  <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-2">
+                    <Activity className="h-3 w-3 text-emerald-400 animate-pulse" /> System Load
+                  </p>
+                  <p className="text-xl font-bold text-white">Optimal</p>
+                </div>
+              </div>
+            </motion.div>
+
           </motion.div>
 
           {/* Journey Selection */}
