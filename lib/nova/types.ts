@@ -13,6 +13,18 @@ export interface NovaContentBlock {
       bytes: string; // base64
     };
   };
+  video?: {
+    format: "mkv" | "mov" | "mp4" | "webm" | "three_gp" | "flv" | "mpg" | "mpeg";
+    source: {
+      bytes: string; // base64
+    };
+  };
+  audio?: {
+    format: "amr" | "flac" | "mp3" | "mp4" | "ogg" | "webm" | "wav";
+    source: {
+      bytes: string; // base64
+    };
+  };
   document?: {
     format:
     | "pdf"

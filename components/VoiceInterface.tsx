@@ -91,29 +91,15 @@ export function VoiceInterface({ fileUrl, contextId }: VoiceInterfaceProps) {
         [ttsEnabled]
     );
 
-    const handleAudioRecorded = useCallback(async (blob: Blob) => {
-        // For hackathon simplicity & Vercel limits, we might still transcribe locally or sending blob
-        // Since we are maintaining the 'sonic.ts' simulation pattern for reliability:
-        // We will simulate the "audio sent" experience but use text for the actual API call 
-        // to avoid complex multipart/form-data parsing on the edge function without a dedicated library.
-        // In a full production app, we'd send the blob to an S3 bucket or specialized endpoint.
-
-        console.log("Audio blob captured:", blob.size);
-        alert("Audio recording captured! (In full demo, this would stream to Nova Sonic. Converting to text for current reliable API path...)");
-
-        // Fallback to text start to keep the flow working in this patch
-        startListening();
-    }, []);
-
     const sendToVoiceAPI = useCallback(
-        async (transcript: string) => {
+        async (input: string | Blob) => {
             setProcessing(true);
 
-            // Add user entry
+            // Add user entry (Optimistic UI)
             const userEntry: VoiceEntry = {
                 id: `u-${Date.now()}`,
                 role: "user",
-                text: transcript,
+                text: input instanceof Blob ? "🎤 [Audio Message]" : input,
                 timestamp: new Date(),
             };
             setConversation((prev) => [...prev, userEntry]);
@@ -124,16 +110,34 @@ export function VoiceInterface({ fileUrl, contextId }: VoiceInterfaceProps) {
                     text: e.text,
                 }));
 
-                const response = await fetch("/api/voice", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        transcript,
-                        fileUrl,
-                        contextId,
-                        conversationHistory: history,
-                    }),
-                });
+                let response;
+
+                if (input instanceof Blob) {
+                    // MULTIPART REQUEST (Audio)
+                    const formData = new FormData();
+                    formData.append("audio", input);
+                    if (fileUrl) formData.append("fileUrl", fileUrl);
+                    if (contextId) formData.append("contextId", contextId);
+                    formData.append("conversationHistory", JSON.stringify(history));
+
+                    response = await fetch("/api/voice", {
+                        method: "POST",
+                        body: formData,
+                        // Content-Type header is set automatically by fetch for FormData
+                    });
+                } else {
+                    // JSON REQUEST (Text)
+                    response = await fetch("/api/voice", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            transcript: input,
+                            fileUrl,
+                            contextId,
+                            conversationHistory: history,
+                        }),
+                    });
+                }
 
                 const data = await response.json();
 
@@ -171,8 +175,14 @@ export function VoiceInterface({ fileUrl, contextId }: VoiceInterfaceProps) {
                 setProcessing(false);
             }
         },
-        [conversation, fileUrl, speak]
+        [conversation, fileUrl, contextId, speak]
     );
+
+    const handleAudioRecorded = useCallback(async (blob: Blob) => {
+        console.log("Audio blob captured:", blob.size);
+        // Direct Send to API (100% Real Audio)
+        sendToVoiceAPI(blob);
+    }, [sendToVoiceAPI]);
 
     const startListening = useCallback(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -366,54 +376,66 @@ export function VoiceInterface({ fileUrl, contextId }: VoiceInterfaceProps) {
             </div>
 
             {/* Mic Button Area */}
-            <div className="p-5 border-t border-zinc-800/50 flex justify-center">
+            <div className="p-5 border-t border-zinc-800/50 flex flex-col items-center gap-4">
                 {/* 
-                     Hybrid approach: Text STT is default for speed, 
-                     but we expose AudioRecorder if we want to confirm the "Sonic" behavior. 
-                     For this UI, keeping the main button as STT is safer for the demo flow.
+                     100% "Real Mode": We use the AudioRecorder to capture raw audio 
+                     and send it to Amazon Nova (Multimodal).
                  */}
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={listening ? stopListening : startListening}
-                    disabled={processing || !sttSupported}
-                    className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50 ${listening
-                        ? "bg-red-500 shadow-lg shadow-red-500/30"
-                        : "bg-gradient-to-br from-violet-600 to-pink-600 shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40"
-                        }`}
-                >
-                    {/* Pulse animation when listening */}
-                    {listening && (
-                        <>
-                            <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-30" />
-                            <span className="absolute inset-[-4px] rounded-full border-2 border-red-400/40 animate-pulse" />
-                        </>
-                    )}
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                        Input Mode:
+                    </span>
+                    <div className="flex bg-zinc-800 rounded-lg p-1">
+                        <button
+                            onClick={() => setSttSupported(false)}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${!sttSupported ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-300'}`}
+                        >
+                            Nova Audio
+                        </button>
+                        <button
+                            onClick={() => setSttSupported(true)}
+                            className={`px-3 py-1 text-xs rounded-md transition-colors ${sttSupported ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-300'}`}
+                        >
+                            Browser STT
+                        </button>
+                    </div>
+                </div>
 
-                    {/* Speaking indicator */}
-                    {speaking && !listening && (
-                        <span className="absolute inset-[-4px] rounded-full border-2 border-violet-400/40 animate-pulse" />
-                    )}
-
-                    {listening ? (
-                        <MicOff className="h-6 w-6 text-white relative z-10" />
-                    ) : (
+                {sttSupported ? (
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={listening ? stopListening : startListening}
+                        disabled={processing}
+                        className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all disabled:opacity-50 ${listening
+                            ? "bg-red-500 shadow-lg shadow-red-500/30"
+                            : "bg-gradient-to-br from-violet-600 to-pink-600 shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40"
+                            }`}
+                    >
+                        {listening && (
+                            <>
+                                <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-30" />
+                                <span className="absolute inset-[-4px] rounded-full border-2 border-red-400/40 animate-pulse" />
+                            </>
+                        )}
                         <Mic className="h-6 w-6 text-white relative z-10" />
-                    )}
-                </motion.button>
-            </div>
+                    </motion.button>
+                ) : (
+                    <AudioRecorder onAudioRecorded={handleAudioRecorded} disabled={processing} />
+                )}
 
-            {/* Status */}
-            <div className="px-5 pb-4 text-center">
-                <p className="text-[11px] text-zinc-600">
-                    {listening
-                        ? "🔴 Listening... speak your question"
-                        : speaking
-                            ? "🔊 Speaking response..."
-                            : processing
-                                ? "⏳ Processing with Nova 2 Sonic..."
-                                : "Tap to speak"}
-                </p>
+                {/* Status */}
+                <div className="px-5 pb-4 text-center">
+                    <p className="text-[11px] text-zinc-600">
+                        {listening
+                            ? "🔴 Listening... speak your question"
+                            : speaking
+                                ? "🔊 Speaking response..."
+                                : processing
+                                    ? "⏳ Processing with Nova 2 Sonic..."
+                                    : "Tap to speak"}
+                    </p>
+                </div>
             </div>
         </div>
     );

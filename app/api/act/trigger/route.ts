@@ -8,6 +8,7 @@ const actSchema = z.object({
 });
 
 import { rateLimiter } from "@/lib/rate-limit";
+import { registry } from "@/lib/agents/registry";
 
 // ...
 export async function POST(request: NextRequest) {
@@ -55,6 +56,10 @@ export async function POST(request: NextRequest) {
             maxTokens: 1000
         });
 
+
+
+        // ... inside POST ...
+
         // Extract JSON from response
         const jsonMatch = response.text.match(/\{[\s\S]*\}/);
         const declaration = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
@@ -63,14 +68,28 @@ export async function POST(request: NextRequest) {
             throw new Error("Failed to generate valid customs declaration");
         }
 
-        // Simulate the "Network Request" to the Port Authority
-        // In a real app, this would be: await fetch('https://ace.cbp.gov/api/file', ...)
-        const transactionId = `TX-${Math.random().toString(36).substring(7).toUpperCase()}`;
+        // REAL ACTION: File to the Registry (Simulating CBP System persistence)
+        // This makes the "Entry Number" a real, look-up-able record in our 'database'.
+
+        const entryNumber = declaration.entryNumber || `E-${Math.floor(Math.random() * 1000000)}`;
+
+        const filedEntry = await registry.fileEntry({
+            entryNumber,
+            filerCode: declaration.filerCode || "999",
+            importer: declaration.importer || "Unknown Importer",
+            portOfEntry: declaration.portCode || "4601",
+            items: declaration.lineItems || [],
+            totalDuty: declaration.totalDuty || 0,
+            documents: ["invoice.pdf"] // placeholder for now
+        });
+
+        // The transaction ID is now the real Entry Number
+        const transactionId = filedEntry.entryNumber;
 
         return NextResponse.json({
             success: true,
             transactionId,
-            declaration,
+            declaration: filedEntry,
             agent: "Nova Act",
             model: "us.amazon.nova-pro-v1:0"
         });

@@ -3,21 +3,58 @@ import { processVoiceQuery } from "@/lib/nova/sonic";
 
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const { transcript, fileUrl, conversationHistory, contextId } = body;
+        let transcript = "";
+        let fileUrl = undefined;
+        let conversationHistory = [];
+        let contextId = undefined;
+        let audioBase64 = undefined;
 
-        if (!transcript || typeof transcript !== "string") {
+        const contentType = request.headers.get("content-type") || "";
+
+        if (contentType.includes("multipart/form-data")) {
+            const formData = await request.formData();
+            const audioFile = formData.get("audio") as File;
+
+            if (audioFile) {
+                const arrayBuffer = await audioFile.arrayBuffer();
+                audioBase64 = Buffer.from(arrayBuffer).toString("base64");
+            }
+
+            transcript = (formData.get("transcript") as string) || "";
+            fileUrl = (formData.get("fileUrl") as string) || undefined;
+            contextId = (formData.get("contextId") as string) || undefined;
+
+            const historyStr = formData.get("conversationHistory") as string;
+            if (historyStr) {
+                try {
+                    conversationHistory = JSON.parse(historyStr);
+                } catch (e) {
+                    console.warn("Failed to parse conversation history", e);
+                }
+            }
+
+        } else {
+            // Fallback to JSON (Text-only mode)
+            const body = await request.json();
+            transcript = body.transcript;
+            fileUrl = body.fileUrl;
+            conversationHistory = body.conversationHistory;
+            contextId = body.contextId;
+        }
+
+        if ((!transcript && !audioBase64)) {
             return NextResponse.json(
-                { error: "Missing or invalid transcript" },
+                { error: "Missing input (audio or transcript)" },
                 { status: 400 }
             );
         }
 
         const result = await processVoiceQuery(
-            transcript,
+            transcript || "Audio Input",
             fileUrl,
             conversationHistory || [],
-            contextId
+            contextId,
+            audioBase64
         );
 
         return NextResponse.json({ success: true, ...result });

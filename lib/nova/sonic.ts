@@ -24,6 +24,7 @@ import {
     ConverseCommand,
 } from "@aws-sdk/client-bedrock-runtime";
 import { NOVA_MODELS } from "./types";
+import { registry } from "@/lib/agents/registry";
 
 const client = new BedrockRuntimeClient({
     region: process.env.AWS_REGION || "us-east-1",
@@ -45,7 +46,8 @@ export async function processVoiceQuery(
     transcript: string,
     fileUrl?: string,
     conversationHistory: Array<{ role: string; text: string }> = [],
-    contextId?: string // New optional context param
+    contextId?: string, // New optional context param
+    audioBase64?: string // New: Real Audio Input
 ): Promise<VoiceQueryResult> {
     const start = Date.now();
 
@@ -57,20 +59,30 @@ export async function processVoiceQuery(
 
     // If we have a specific Entry ID (passed from "Act" step), inject its context
     if (contextId) {
-        // In a real app, we would: const entry = await db.collections.entries.findOne({ id: contextId })
-        // For the demo/hackathon, we inject the specific "Success" context for the flow.
-        contextStr += `\n\nCONTEXT: The user is asking about Customs Entry #${contextId}.
-        Status: RELEASED / CLEARED.
-        Filer: Nova Act.
-        Date: ${new Date().toLocaleDateString()}.
-        Notes: All compliance checks passed. Cargo is ready for pickup at Pier 4.`;
+        // REAL LOOKUP: Check our simulated "Customs DB"
+        const entry = await registry.getEntry(contextId);
+
+        if (entry) {
+            contextStr += `\n\nCONTEXT: The user is asking about Customs Entry #${entry.entryNumber}.
+            Current Status: ${entry.status} (Verified in Registry).
+            Filer Code: ${entry.filerCode}.
+            Import Date: ${entry.timestamp}.
+            Items: ${entry.items.map(i => `${i.quantity || 1}x ${i.description}`).join(", ")}.
+            Total Duty: $${entry.totalDuty.toFixed(2)}.
+            
+            ${entry.status === "RELEASED"
+                    ? "ACTIONABLE: The goods are released. You can authorize the warehouse team to dispatch the trucks."
+                    : "ACTIONABLE: The goods are NOT yet released. Do not dispatch."}`;
+        } else {
+            // Fallback if ID is provided but not found (e.g. from a fresh restart without persistence)
+            contextStr += `\n\nCONTEXT: The user is asking about Customs Entry #${contextId}, but it was not found in the active registry. 
+            It might be a legacy entry or the system was restarted. Advising user to re-file or check the ID.`;
+        }
     }
 
     // Build conversation context
-    const messages: Array<{
-        role: "user" | "assistant";
-        content: Array<{ text: string }>;
-    }> = [];
+    // We use the shared type to allow audio/video/text blocks
+    const messages: any[] = [];
 
     // Add conversation history
     for (const entry of conversationHistory.slice(-6)) {
@@ -87,7 +99,12 @@ export async function processVoiceQuery(
     });
 
     const command = new ConverseCommand({
-        modelId: NOVA_MODELS.LITE, // Using Lite for stateless request/response. Real-time Sonic requires WebSocket.
+        modelId: NOVA_MODELS.LITE,
+        messages,
+        inferenceConfig: {
+            maxTokens: 150,
+            temperature: 0.7,
+        },
         system: [
             {
                 text: `You are NovaVision Voice Assistant, powered by Amazon Nova.
@@ -100,23 +117,55 @@ You are part of a voice conversation, so keep your answers concise, natural, and
 - CONTEXT INFORMATION: ${contextStr}`,
             },
         ],
-        messages,
-        inferenceConfig: {
-            maxTokens: 150, // Keep short for voice
-            temperature: 0.7,
-        }
     });
 
-    const response = await client.send(command);
+    // If audio input is provided, we construct a multimodal message
+    if (audioBase64) {
+        // Remove the text-only message added above
+        messages.pop();
 
-    const answer =
-        response.output?.message?.content?.[0]?.text ||
-        "I couldn't process that question. Please try again.";
+        // Add multimodal message with Audio
+        messages.push({
+            role: "user",
+            content: [
+                {
+                    text: "Please answer this voice query from a warehouse operator:"
+                },
+                {
+                    audio: {
+                        format: "webm", // AudioRecorder produces webm
+                        source: {
+                            bytes: audioBase64
+                        }
+                    }
+                }
+            ]
+        });
 
-    return {
-        transcript,
-        answer,
-        model: "Nova 2 Sonic (Simulated via Nova Lite)",
-        processingTimeMs: Date.now() - start,
-    };
+        // Force Nova Pro for Audio
+        command.input.modelId = NOVA_MODELS.PRO;
+    }
+
+    try {
+        const response = await client.send(command);
+
+        const answer =
+            response.output?.message?.content?.[0]?.text ||
+            "I couldn't process that question. Please try again.";
+
+        return {
+            transcript: audioBase64 ? "[Audio Input]" : transcript,
+            answer,
+            model: audioBase64 ? "Nova 2 Pro (Multimodal Audio)" : "Nova 2 Lite (Text)",
+            processingTimeMs: Date.now() - start,
+        };
+    } catch (error) {
+        console.error("Nova Sonic Error:", error);
+        return {
+            transcript,
+            answer: "Sorry, I'm having trouble connecting to Nova right now.",
+            model: "Error",
+            processingTimeMs: Date.now() - start,
+        };
+    }
 }
