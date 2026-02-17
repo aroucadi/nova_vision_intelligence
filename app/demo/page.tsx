@@ -21,6 +21,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { DynamicDemo, DemoScene } from "@/components/demo/DynamicDemo";
 import { ScannerVisual, TerminalVisual, WaveformVisual } from "@/components/demo/SceneVisuals";
+import { Player } from "@remotion/player";
+import { WorkflowLoop } from "@/remotion/WorkflowLoop";
 
 // --- SCENARIO DATA DEFINTIONS ---
 
@@ -105,6 +107,45 @@ const SCENARIO_VOICE: DemoScene[] = [
     {
         id: "outro", title: "Operations Unblocked", subtitle: "", type: "outro", color: "from-pink-900 to-black",
         content: "Information at the speed of sound."
+    }
+];
+
+const SCENARIO_CLOSED_LOOP: DemoScene[] = [
+    {
+        id: "intro", title: "The Agentic Loop", subtitle: "", type: "intro", color: "from-emerald-900 to-black",
+        content: "Experience the fully integrated loop: Document -> AI -> Warehouse Voice -> Resolution.",
+        visual: <Layers className="h-20 w-20 text-emerald-400" />
+    },
+    {
+        id: "problem", title: "The Silo Problem", subtitle: "Disconnected Worlds", type: "problem", color: "from-red-900/40 to-black",
+        content: "Traditionally, the Office (Docs) and Warehouse (Voice) are disconnected. Discrepancies take days to resolve via email chains.",
+        visual: <div className="text-6xl">🧩❌</div>
+    },
+    {
+        id: "solution", title: "The Solution", subtitle: "Shared Context", type: "solution", color: "from-emerald-900/40 to-black",
+        content: "Nova establishes a 'Global Pathway Context'. Alerts from the Office (e.g., High Risk) instantly propagate to the Warehouse Voice capability.",
+        visual: <div className="text-6xl">🧠⚡</div>
+    },
+    {
+        id: "demo", title: "Live Orchestration", subtitle: "Real-Time Visual", type: "demo", color: "from-emerald-900/40 to-black",
+        content: "Watch the actual flow of data packets. Note the 'Red' discrepancy packet triggering an instant Claim Draft in the office.",
+        visual: (
+            <div className="w-full h-full rounded-2xl overflow-hidden border border-emerald-500/30 shadow-2xl relative bg-black">
+                <Player
+                    component={WorkflowLoop}
+                    durationInFrames={300}
+                    compositionWidth={1280}
+                    compositionHeight={720}
+                    fps={30}
+                    style={{ width: '100%', height: '100%' }}
+                    controls autoPlay loop
+                />
+            </div>
+        )
+    },
+    {
+        id: "outro", title: "Loop Closed", subtitle: "", type: "outro", color: "from-emerald-900 to-black",
+        content: "Discrepancy resolved in seconds, not days."
     }
 ];
 
@@ -197,6 +238,22 @@ export default function DemoPage() {
                         <h3 className="text-xl font-bold mb-2">Voice Intelligence</h3>
                         <p className="text-sm text-zinc-500">How we enable hands-free operations.</p>
                         <div className="mt-6 flex items-center text-sm font-bold text-pink-400">
+                            Watch Story <Play className="ml-2 h-3 w-3 fill-current" />
+                        </div>
+                    </motion.div>
+
+                    {/* Closed Loop Card */}
+                    <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setActiveScenario(SCENARIO_CLOSED_LOOP)}
+                        className="cursor-pointer group relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 hover:border-emerald-500/50 hover:bg-zinc-900/80 transition-all"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Layers className="h-10 w-10 text-emerald-400 mb-4" />
+                        <h3 className="text-xl font-bold mb-2">The Agentic Loop</h3>
+                        <p className="text-sm text-zinc-500">End-to-end orchestration: Office to Warehouse.</p>
+                        <div className="mt-6 flex items-center text-sm font-bold text-emerald-400">
                             Watch Story <Play className="ml-2 h-3 w-3 fill-current" />
                         </div>
                     </motion.div>

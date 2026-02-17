@@ -118,23 +118,19 @@ export default function LandingPage() {
                 </section>
 
                 {/* Remotion Workflow Loop */}
-                <section className="max-w-5xl mx-auto mb-32">
+                <section className="max-w-3xl mx-auto mb-24">
+                    <div className="text-center mb-8">
+                        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-violet-400 inline-flex items-center gap-2">
+                            The Agentic Loop <Layers className="h-5 w-5 text-violet-400" />
+                        </h2>
+                    </div>
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         transition={SPRING_PHYSICS}
                         viewport={{ once: true }}
-                        className="rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden shadow-2xl shadow-violet-500/10"
+                        className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden shadow-2xl shadow-violet-500/10 ring-1 ring-white/5"
                     >
-                        <div className="p-8 border-b border-white/5 flex items-center justify-between">
-                            <div className="space-y-1">
-                                <h2 className="text-2xl font-bold flex items-center gap-2">
-                                    <Layers className="text-violet-400" /> The Agentic Loop
-                                </h2>
-                                <p className="text-zinc-400 text-sm">Real-time orchestrated workflow from Document to Voice.</p>
-                            </div>
-                            <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/10">Live Render</Badge>
-                        </div>
                         <div className="aspect-video w-full bg-zinc-900/50 relative">
                             <Player
                                 component={WorkflowLoop}
@@ -150,6 +146,10 @@ export default function LandingPage() {
                                 loop
                                 autoPlay
                             />
+                        </div>
+                        <div className="px-6 py-3 border-t border-white/5 bg-white/5 flex items-center justify-between text-xs text-zinc-500 font-mono">
+                            <span>LIVE RENDER</span>
+                            <span>30 FPS • 1280x720</span>
                         </div>
                     </motion.div>
                 </section>

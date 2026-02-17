@@ -1,107 +1,281 @@
 
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Easing } from 'remotion';
 import { Circle } from '@remotion/shapes';
 
+// --- STYLING CONSTANTS ---
 const COLORS = {
-    office: '#7c3aed', // Violet (Nova 2 Lite)
-    middleware: '#06b6d4', // Cyan (Nova Pro)
-    warehouse: '#10b981', // Emerald (Compliance)
-    alert: '#ef4444', // Red (Discrepancy)
+    background: '#0f172a', // Slate 900
+    office: '#a78bfa',     // Faded Violet
+    officeGlow: '#7c3aed', // Bright Violet
+    nova: '#22d3ee',       // Cyan
+    novaGlow: '#0891b2',   // Dark Cyan
+    warehouse: '#34d399',  // Emerald
+    warehouseGlow: '#059669', // Dark Emerald
+    alert: '#f87171',      // Red
+    text: '#e2e8f0'        // Slate 200
 };
+
+// --- HELPER COMPONENTS ---
+
+const GlowingNode: React.FC<{
+    x: number;
+    y: number;
+    color: string;
+    glowColor: string;
+    icon: string;
+    label: string;
+    frame: number;
+    fps: number;
+    delay: number;
+    scale?: number;
+}> = ({ x, y, color, glowColor, icon, label, frame, fps, delay, scale: extraScale = 1 }) => {
+
+    // Entrance Animation (Spring)
+    const entrance = spring({
+        frame: frame - delay,
+        fps,
+        config: { damping: 12, stiffness: 100 }
+    });
+
+    // Ongoing Pulse (Sine Wave)
+    const pulse = Math.sin(frame / 15) * 0.05 + 1;
+
+    // Apply scaling
+    const finalScale = entrance * pulse * extraScale;
+
+    return (
+        <div style={{
+            position: 'absolute',
+            left: x,
+            top: y,
+            transform: `translate(-50%, -50%) scale(${finalScale})`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            zIndex: 10
+        }}>
+            <div style={{
+                width: 100,
+                height: 100,
+                borderRadius: '50%',
+                backgroundColor: 'rgba(30, 41, 59, 0.8)', // Slate 800 with opacity
+                border: `3px solid ${color}`,
+                boxShadow: `0 0 20px ${glowColor}, inset 0 0 10px ${glowColor}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(10px)',
+                fontSize: 40
+            }}>
+                {icon}
+            </div>
+            <div style={{
+                marginTop: 15,
+                color: COLORS.text,
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 600,
+                fontSize: 18,
+                textShadow: `0 2px 4px rgba(0,0,0,0.5)`
+            }}>
+                {label}
+            </div>
+        </div>
+    );
+};
+
+const ConnectionLine: React.FC<{
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    progress: number;
+    color: string;
+}> = ({ startX, startY, endX, endY, progress, color }) => {
+
+    // Calculate distance and angle
+    const dist = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+    // Reveal animation
+    const width = interpolate(progress, [0, 1], [0, dist], { extrapolateRight: 'clamp' });
+
+    return (
+        <div style={{
+            position: 'absolute',
+            left: startX,
+            top: startY,
+            width: dist,
+            height: 4,
+            transformOrigin: '0 50%',
+            transform: `rotate(${angle}deg)`,
+            zIndex: 1
+        }}>
+            {/* Base Line (Dim) */}
+            <div style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                borderRadius: 2
+            }} />
+
+            {/* Active Line (Bright) */}
+            <div style={{
+                position: 'absolute',
+                width: width,
+                height: '100%',
+                backgroundColor: color,
+                boxShadow: `0 0 10px ${color}`,
+                borderRadius: 2,
+                opacity: progress > 0 ? 1 : 0
+            }} />
+        </div>
+    );
+};
+
+const DataPacket: React.FC<{
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+    progress: number; // 0 to 1
+    color: string;
+}> = ({ startX, startY, endX, endY, progress, color }) => {
+    if (progress <= 0 || progress >= 1) return null;
+
+    const x = interpolate(progress, [0, 1], [startX, endX]);
+    const y = interpolate(progress, [0, 1], [startY, endY]);
+
+    return (
+        <div style={{
+            position: 'absolute',
+            left: x,
+            top: y,
+            transform: 'translate(-50%, -50%)',
+            zIndex: 20
+        }}>
+            <Circle radius={10} fill={color} style={{ boxShadow: `0 0 15px ${color}` }} />
+        </div>
+    );
+};
+
+// --- MAIN COMPOSITION ---
 
 export const WorkflowLoop: React.FC = () => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
-    // Animation Sequence
-    // 0-60: Document -> Cloud (Analysis)
-    // 60-120: Cloud -> Warehouse (Notification)
-    // 120-180: Warehouse (Voice Input)
-    // 180-240: Warehouse -> Cloud (Discrepancy)
-    // 240-300: Cloud -> Office (Claim Draft)
+    // Coordinates (1280x720)
+    const POS = {
+        office: { x: 250, y: 360 },
+        nova: { x: 640, y: 360 },
+        warehouse: { x: 1030, y: 360 }
+    };
 
-    const progress = interpolate(frame, [0, 300], [0, 1]);
+    // --- TIMING ---
+    // 0-30: Intro
+    // 30-90: Office -> Nova (Document)
+    // 90-150: Nova -> Warehouse (Alert)
+    // 150-210: Warehouse -> Nova (Discrepancy)
+    // 210-270: Nova -> Office (Claim)
 
-    // Phase 1: Document Upload
-    const docOpacity = interpolate(frame, [0, 30], [0, 1], { extrapolateRight: 'clamp' });
-    const docY = interpolate(frame, [0, 30], [50, 0], { extrapolateRight: 'clamp' });
+    // Intro Entrance
+    const officeEnter = 0;
+    const novaEnter = 10;
+    const warehouseEnter = 20;
 
-    // Phase 2: Processing
-    const cloudScale = spring({ frame: frame - 45, fps, config: { damping: 10 } });
+    // Phases
+    const phase1Start = 45;
+    const phase2Start = 105;
+    const phase3Start = 165;
+    const phase4Start = 225;
 
-    // Phase 3: Warehouse Receive
-    const warehouseOpacity = interpolate(frame, [90, 120], [0, 1], { extrapolateRight: 'clamp' });
-
-    // Phase 4: Discrepancy Signal
-    const signalProgress = interpolate(frame, [180, 240], [0, 1], { extrapolateRight: 'clamp' });
-    const signalY = interpolate(signalProgress, [0, 1], [200, -200]); // Moving Up
+    // Progress Calculations
+    const progress1 = interpolate(frame, [phase1Start, phase1Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
+    const progress2 = interpolate(frame, [phase2Start, phase2Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
+    const progress3 = interpolate(frame, [phase3Start, phase3Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
+    const progress4 = interpolate(frame, [phase4Start, phase4Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
 
     return (
-        <AbsoluteFill style={{ backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center' }}>
-
+        <AbsoluteFill style={{
+            backgroundColor: COLORS.background,
+            justifyContent: 'center',
+            alignItems: 'center',
+            fontFamily: 'sans-serif'
+        }}>
             {/* BACKGROUND GRID */}
-            <AbsoluteFill style={{ opacity: 0.1 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 20, width: '100%', height: '100%' }}>
-                    {Array.from({ length: 48 }).map((_, i) => (
-                        <div key={i} style={{ width: 4, height: 4, backgroundColor: '#fff', borderRadius: '50%' }} />
-                    ))}
-                </div>
-            </AbsoluteFill>
+            <AbsoluteFill style={{
+                backgroundImage: `radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.05) 0%, rgba(15, 23, 42, 0) 60%)`
+            }} />
+            <div style={{
+                position: 'absolute', inset: 0, opacity: 0.15,
+                backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                backgroundSize: '40px 40px'
+            }} />
+
+            {/* CONNECTIONS */}
+            <ConnectionLine startX={POS.office.x} startY={POS.office.y} endX={POS.nova.x} endY={POS.nova.y} progress={1} color={COLORS.office} />
+            <ConnectionLine startX={POS.nova.x} startY={POS.nova.y} endX={POS.warehouse.x} endY={POS.warehouse.y} progress={1} color={COLORS.warehouse} />
 
             {/* NODES */}
+            <GlowingNode
+                x={POS.office.x} y={POS.office.y}
+                icon="📄" label="Office"
+                color={COLORS.office} glowColor={COLORS.officeGlow}
+                frame={frame} fps={fps} delay={officeEnter}
+            />
 
-            {/* 1. OFFICE (Top Left) */}
-            <div style={{ position: 'absolute', top: '20%', left: '20%', opacity: docOpacity, transform: `translateY(${docY}px)` }}>
-                <div style={{ width: 100, height: 120, backgroundColor: 'white', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 40 }}>📄</span>
-                </div>
-                <h2 style={{ color: 'white', fontFamily: 'sans-serif', textAlign: 'center' }}>Office</h2>
-            </div>
+            <GlowingNode
+                x={POS.nova.x} y={POS.nova.y}
+                icon="🧠" label="Nova Core"
+                color={COLORS.nova} glowColor={COLORS.novaGlow}
+                frame={frame} fps={fps} delay={novaEnter}
+                scale={1.2}
+            />
 
-            {/* 2. CLOUD / AI (Center) */}
-            <div style={{ transform: `scale(${Math.max(0, cloudScale)})`, zIndex: 10 }}>
-                <Circle radius={80} fill={COLORS.middleware} style={{ opacity: 0.2, position: 'absolute' }} />
-                <Circle radius={60} fill={COLORS.office} />
-                <h1 style={{ position: 'absolute', color: 'white', fontFamily: 'sans-serif', fontWeight: 'bold' }}>NOVA</h1>
-            </div>
+            <GlowingNode
+                x={POS.warehouse.x} y={POS.warehouse.y}
+                icon="🎤" label="Warehouse"
+                color={COLORS.warehouse} glowColor={COLORS.warehouseGlow}
+                frame={frame} fps={fps} delay={warehouseEnter}
+            />
 
-            {/* 3. WAREHOUSE (Bottom Right) */}
-            <div style={{ position: 'absolute', bottom: '20%', right: '20%', opacity: warehouseOpacity }}>
-                <div style={{ width: 120, height: 80, backgroundColor: '#334155', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `4px solid ${COLORS.warehouse}` }}>
-                    <span style={{ fontSize: 40 }}>🎤</span>
-                </div>
-                <h2 style={{ color: 'white', fontFamily: 'sans-serif', textAlign: 'center' }}>Warehouse</h2>
-            </div>
+            {/* DATA PACKETS */}
+            {/* 1. Document to Nova */}
+            <DataPacket
+                startX={POS.office.x} startY={POS.office.y} endX={POS.nova.x} endY={POS.nova.y}
+                progress={progress1} color={COLORS.office}
+            />
 
-            {/* SIGNALS */}
+            {/* 2. Alert to Warehouse */}
+            <DataPacket
+                startX={POS.nova.x} startY={POS.nova.y} endX={POS.warehouse.x} endY={POS.warehouse.y}
+                progress={progress2} color={COLORS.nova}
+            />
 
-            {/* Forward Flow (Blue) */}
-            {frame > 60 && frame < 120 && (
-                <div style={{
-                    position: 'absolute', width: 20, height: 20, borderRadius: '50%', backgroundColor: COLORS.middleware,
-                    top: interpolate(frame, [60, 120], [360, 500]), // Calculated positions approximately
-                    left: interpolate(frame, [60, 120], [640, 900])
-                }} />
-            )}
+            {/* 3. Discrepancy to Nova (Red) */}
+            <DataPacket
+                startX={POS.warehouse.x} startY={POS.warehouse.y} endX={POS.nova.x} endY={POS.nova.y}
+                progress={progress3} color={COLORS.alert}
+            />
 
-            {/* Feedback Loop (Red) */}
-            {frame > 180 && (
-                <div style={{
-                    position: 'absolute', width: 25, height: 25, borderRadius: '50%', backgroundColor: COLORS.alert,
-                    bottom: interpolate(frame, [180, 240], [200, 500]),
-                    right: interpolate(frame, [180, 240], [300, 640]),
-                    boxShadow: `0 0 20px ${COLORS.alert}`
-                }} />
-            )}
+            {/* 4. Claim to Office (Red) */}
+            <DataPacket
+                startX={POS.nova.x} startY={POS.nova.y} endX={POS.office.x} endY={POS.office.y}
+                progress={progress4} color={COLORS.alert}
+            />
 
-            {/* TEXT OVERLAYS */}
-            <div style={{ position: 'absolute', bottom: 50, width: '100%', textAlign: 'center', fontFamily: 'sans-serif', color: 'white', fontSize: 24 }}>
-                {frame < 60 && "Invoice Upload & Analysis"}
-                {frame >= 60 && frame < 120 && "Global Pathway Update"}
-                {frame >= 120 && frame < 180 && "Proactive Notification (Voice)"}
-                {frame >= 180 && frame < 240 && "Discrepancy Reported!"}
-                {frame >= 240 && "Claims Agent Triggered"}
+            {/* TEXT OVERLAY */}
+            <div style={{
+                position: 'absolute', bottom: 60, width: '100%', textAlign: 'center',
+                color: 'white', fontSize: 24, fontWeight: 'bold', letterSpacing: '1px',
+                textTransform: 'uppercase', textShadow: '0 2px 10px rgba(0,0,0,0.8)'
+            }}>
+                {progress1 > 0 && progress1 < 1 && "Start: Invoice Processing"}
+                {progress2 > 0 && progress2 < 1 && "Nova Logic: Proactive Context Update"}
+                {progress3 > 0 && progress3 < 1 && "Voice Action: Discrepancy Reported"}
+                {progress4 > 0 && progress4 < 1 && "Resolution: Claim Drafted"}
             </div>
 
         </AbsoluteFill>
