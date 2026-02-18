@@ -11,24 +11,6 @@ export interface VectorResult {
 }
 
 class VectorStore {
-    private mockData: VectorResult[] = [
-        {
-            id: "1",
-            metadata: {
-                filename: "claim_history_shenzhen_2023.pdf",
-                content: "Previous shortage claim for Shenzhen Tech Mfg resolved within 48 hours. Vendor was responsive."
-            },
-            score: 0.95
-        },
-        {
-            id: "2",
-            metadata: {
-                filename: "vendor_compliance_notes.csv",
-                content: "TechImports LLC has high reliability rating. Port of LAX handled previous discrepancies."
-            },
-            score: 0.88
-        }
-    ];
 
     async search(query: string, limit: number = 2): Promise<VectorResult[]> {
         const kbId = process.env.KNOWLEDGE_BASE_ID;
@@ -47,8 +29,8 @@ class VectorStore {
             }));
         }
 
-        console.log(`[VectorStore] Using Mock RAG for query: ${query}`);
-        return this.mockData.slice(0, limit);
+        console.warn(`[VectorStore] RAG not configured (KNOWLEDGE_BASE_ID missing). Returning empty results.`);
+        return [];
     }
 
     async add(id: string, text: string, metadata: any): Promise<void> {

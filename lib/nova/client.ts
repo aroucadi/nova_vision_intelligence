@@ -139,24 +139,6 @@ export class NovaClient {
         prompt: string,
         options: { enableReasoning?: boolean } = {}
     ): Promise<{ text: string; usage: { inputTokens: number; outputTokens: number } }> {
-        // GOLDEN PATH: Simulation Mode (Deterministic Demo)
-        // Explicitly enabled via Env Var to avoid "Hidden Backdoor" behavior
-        if (process.env.ENABLE_MOCK_RESPONSES === "true" && docName === "commercial_invoice_scan.pdf") {
-            console.log("🌟 SIMULATION MODE: Returning deterministic mock data for demo.");
-
-            // Lazy load mocks to keep bundle small
-            const { MOCK_DATA } = await import("./mocks");
-            const mock = MOCK_DATA.COMMERCIAL_INVOICE;
-
-            // Determine which agent is calling based on prompt content
-            if (prompt.includes("summary")) {
-                return { text: mock.SUMMARY, usage: { inputTokens: 500, outputTokens: 200 } };
-            } else if (prompt.includes("Compliance Officer") || prompt.includes("regulatory risks")) {
-                return { text: mock.COMPLIANCE, usage: { inputTokens: 500, outputTokens: 200 } };
-            } else if (prompt.includes("Schema") || prompt.includes("JSON")) {
-                return { text: JSON.stringify(mock.EXTRACTION), usage: { inputTokens: 500, outputTokens: 200 } };
-            }
-        }
 
         const docBytes = Buffer.from(docBase64, "base64");
 
