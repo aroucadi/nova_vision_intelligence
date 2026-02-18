@@ -14,8 +14,10 @@ import {
     Truck,
     AlertCircle,
     CheckCircle2,
-    Package
+    Package,
+    Brain
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner"; // Assuming sonner is used for toasts based on package.json
 
 // Types
@@ -23,7 +25,7 @@ import { CustomsEntry } from "@/lib/services/customs-service";
 import { WarehouseItem } from "@/lib/services/warehouse-service";
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"overview" | "customs" | "warehouse">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "customs" | "warehouse" | "rag">("overview");
     const [isLoading, setIsLoading] = useState(false);
 
     // Data State
@@ -126,6 +128,7 @@ export default function AdminDashboard() {
                         { id: "overview", label: "Overview", icon: LayoutDashboard },
                         { id: "customs", label: "Customs ACE", icon: FileText },
                         { id: "warehouse", label: "Warehouse ERP", icon: Database },
+                        { id: "rag", label: "RAG Engine", icon: Brain },
                     ].map((tab) => (
                         <button
                             key={tab.id}
@@ -167,6 +170,9 @@ export default function AdminDashboard() {
                             )}
                             {activeTab === "warehouse" && (
                                 <WarehouseTab data={warehouseItems} />
+                            )}
+                            {activeTab === "rag" && (
+                                <RagTab />
                             )}
                         </motion.div>
                     </AnimatePresence>
@@ -296,6 +302,105 @@ function WarehouseTab({ data }: { data: WarehouseItem[] }) {
                     </div>
                 </div>
             ))}
+        </div>
+    );
+}
+function RagTab() {
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [lastSync, setLastSync] = useState<string | null>(null);
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        try {
+            const res = await fetch("/api/rag/sync", {
+                method: "POST",
+                body: JSON.stringify({ action: "sync" })
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("RAG Data Source Sync Triggered");
+                setLastSync(new Date().toLocaleTimeString());
+            } else {
+                toast.error(data.error || "Sync failed");
+            }
+        } catch (e) {
+            toast.error("Network error during sync");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="p-8 bg-zinc-900/40 border border-zinc-800/50 rounded-2xl">
+                <div className="flex items-start justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="p-4 bg-violet-600/10 rounded-2xl border border-violet-500/20">
+                            <Brain className="h-8 w-8 text-violet-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-white mb-1">Knowledge Ecosystem</h2>
+                            <p className="text-sm text-zinc-500 max-w-md">
+                                Manage semantic intelligence for all Nova agents. Documents in the Sandbox S3 are indexed into Bedrock Knowledge Bases for real-time RAG.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className={`
+                            px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all
+                            ${isSyncing ? "bg-zinc-800 text-zinc-500 cursor-not-allowed" : "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/20"}
+                        `}
+                    >
+                        <RefreshCw className={`h-5 w-5 ${isSyncing ? "animate-spin" : ""}`} />
+                        {isSyncing ? "Syncing Logic..." : "Sync Agent Knowledge"}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider font-bold">Vector Engine Status</span>
+                            <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Active</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-sm font-medium text-zinc-300">Amazon Bedrock Knowledge Base</span>
+                        </div>
+                    </div>
+                    <div className="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider font-bold">Last Synchronized</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-zinc-500" />
+                            <span className="text-sm font-medium text-zinc-300">{lastSync || "Never (Seed Required)"}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* RAG Information */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="p-6 bg-zinc-900/40 border border-zinc-800/50 rounded-2xl">
+                    <h3 className="text-sm font-bold text-white mb-4">Ingestion Source</h3>
+                    <div className="flex items-center gap-3 p-3 bg-zinc-950/50 border border-zinc-800/50 rounded-lg">
+                        <Database className="h-4 w-4 text-blue-400" />
+                        <span className="text-xs font-mono text-zinc-400">s3://nova-knowledge-source</span>
+                    </div>
+                </div>
+                <div className="col-span-2 p-6 bg-zinc-900/40 border border-zinc-800/50 rounded-2xl">
+                    <h3 className="text-sm font-bold text-white mb-4">Intelligence Coverage</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {['Shipment Documents', 'Import Regulations', 'Past Claim Correspondence', 'Vendor Reliability Profiles', 'Warehouse SOPs'].map(tag => (
+                            <span key={tag} className="px-3 py-1 bg-zinc-800 text-zinc-400 rounded-lg text-xs border border-zinc-700">
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
