@@ -98,8 +98,11 @@ export async function processVoiceQuery(
     if (contextId && discrepancyMatch) {
         const observedCount = parseInt(discrepancyMatch[1] || discrepancyMatch[2] || discrepancyMatch[3]);
 
-        // Mock "Expected" - in real app we'd get this from the `entry` above
-        const expectedCount = 100;
+        // REAL LOOKUP: Get expected count from the registry entry
+        const entry = await registry.getEntry(contextId);
+        const firstItem = entry?.items?.[0];
+        const expectedCount = firstItem?.quantity || 100;
+        const itemName = firstItem?.description || "Units";
 
         if (observedCount < expectedCount) {
             console.log(`[Sonic] Discrepancy Detected: Observed ${observedCount}, Expected ${expectedCount}`);

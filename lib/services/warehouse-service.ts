@@ -1,5 +1,6 @@
 import { dynamoDb } from "@/lib/aws/dynamo"; // Absolute path alias
 import { GetCommand, PutCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const TABLE_NAME = process.env.NOVA_WAREHOUSE_TABLE || "NovaWarehouseTable";
 
@@ -85,6 +86,23 @@ export class WarehouseService {
                 Item: item,
             }));
         }
+
+        // UNIFIED SEEDING: Upload Warehouse SOPs to Knowledge Base
+        const sopContent = `# Warehouse SOP: Receiving Electronic Goods
+1. Verify item SKU against Customs Manifest (e.g. WC-1080P).
+2. Count physical units.
+3. If count is less than manifest (e.g. < 100 units), report discrepancy immediately.
+4. Security cameras (HS 8525.80) are high-value and must be stored in Zone B.`;
+
+        const bucketName = `nova-knowledge-${process.env.CDK_DEFAULT_ACCOUNT || 'sandbox'}-${process.env.AWS_REGION || 'us-east-1'}`;
+        const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+        await s3.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: `documents/warehouse_receiving_sop.md`,
+            Body: sopContent,
+            ContentType: "text/markdown"
+        }));
+        console.log(`[UnifiedSeed] Uploaded Warehouse SOP to RAG Knowledge Bucket`);
     }
 }
 

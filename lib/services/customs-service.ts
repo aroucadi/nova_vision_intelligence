@@ -1,5 +1,6 @@
 import { dynamoDb } from "@/lib/aws/dynamo"; // Absolute path alias
 import { GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const TABLE_NAME = process.env.NOVA_CUSTOMS_TABLE || "NovaCustomsTable";
 
@@ -53,6 +54,30 @@ export class CustomsService {
         }));
     }
 
+    async getAllEntries(): Promise<CustomsEntry[]> {
+        // Scan is okay for a demo/sandbox with limited data
+        const result = await dynamoDb.send(new ScanCommand({
+            TableName: TABLE_NAME,
+        }));
+        return (result.Items as CustomsEntry[]) || [];
+    }
+
+    private async uploadToKnowledgeBucket(filename: string, content: string) {
+        const bucketName = `nova-knowledge-${process.env.CDK_DEFAULT_ACCOUNT || 'sandbox'}-${process.env.AWS_REGION || 'us-east-1'}`;
+        try {
+            const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
+            await s3.send(new PutObjectCommand({
+                Bucket: bucketName,
+                Key: `documents/${filename}`,
+                Body: content,
+                ContentType: "text/markdown"
+            }));
+            console.log(`[UnifiedSeed] Uploaded ${filename} to RAG Knowledge Bucket`);
+        } catch (e) {
+            console.error(`[UnifiedSeed] S3 Upload Fail: ${filename}`, e);
+        }
+    }
+
     async seedData(): Promise<void> {
         const entries: CustomsEntry[] = [
             {
@@ -90,15 +115,17 @@ export class CustomsService {
                 TableName: TABLE_NAME,
                 Item: entry,
             }));
-        }
-    }
 
-    async getAllEntries(): Promise<CustomsEntry[]> {
-        // Scan is okay for a demo/sandbox with limited data
-        const result = await dynamoDb.send(new ScanCommand({
-            TableName: TABLE_NAME,
-        }));
-        return (result.Items as CustomsEntry[]) || [];
+            // UNIFIED SEEDING: Create a corresponding knowledge document for RAG
+            const kbDocument = `# Customs Entry: ${entry.entryNumber}
+Vendor: ${entry.vendor}
+Importer: ${entry.importer}
+Status: ${entry.status}
+Historical Reliability: ${entry.importer === "TechImports LLC" ? "HIGH. Previous discrepancies resolved quickly." : "MEDIUM."}
+Note: This document provides context for RAG agents.`;
+
+            await this.uploadToKnowledgeBucket(`entry_${entry.entryNumber}.md`, kbDocument);
+        }
     }
 }
 

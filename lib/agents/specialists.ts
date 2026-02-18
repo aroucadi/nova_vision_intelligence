@@ -127,13 +127,22 @@ export class ComplianceAgent extends BaseAgent {
 
         // Context Injection: Feed extracted entities to the Compliance Officer
         if (context.extractionData) {
+            // RAG LOOKUP: Check for historical risks related to the vendor/item
+            const vendor = context.extractionData.vendor?.name || "";
+            const items = context.extractionData.line_items?.map(i => i.description).join(", ") || "";
+            const history = await vectorStore.search(`compliance risk for ${vendor} related to ${items}`, 1);
+
             prompt += `\n\n<context_injection>
 AUDIT TARGETS (Extracted Data):
 ${JSON.stringify(context.extractionData, null, 2)}
 
+HISTORICAL RAG CONTEXT: 
+${history.length > 0 ? history[0].metadata.content : "No historical risk found for this vendor/item."}
+
 INSTRUCTION: 
 1. Specificially audit the "vendor" against Sanctions Lists.
 2. Check the "line_items" descriptions for HazMat risks.
+3. Incorporate the HISTORICAL RAG CONTEXT into your risk determination.
 </context_injection>`;
         }
 
