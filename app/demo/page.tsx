@@ -133,7 +133,7 @@ const SCENARIO_CLOSED_LOOP: DemoScene[] = [
             <div className="w-full h-full rounded-2xl overflow-hidden border border-emerald-500/30 shadow-2xl relative bg-black">
                 <Player
                     component={WorkflowLoop}
-                    durationInFrames={300}
+                    durationInFrames={360}
                     compositionWidth={1280}
                     compositionHeight={720}
                     fps={30}

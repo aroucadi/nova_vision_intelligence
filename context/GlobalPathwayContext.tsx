@@ -11,6 +11,16 @@ export interface ActivityLog {
     status: "Success" | "Processing" | "Failed";
 }
 
+export interface Claim {
+    id: string;
+    shipmentId: string;
+    vendor: string;
+    vendorEmail: string;
+    draft: string;
+    status: "PENDING" | "SENT";
+    timestamp: Date;
+}
+
 export interface Metrics {
     processedDocs: number;
     filings: number;
@@ -29,9 +39,12 @@ interface GlobalPathwayContextType {
     metrics: Metrics;
     activityLog: ActivityLog[];
     activeEntries: CustomsEntry[];
+    claims: Claim[];
     addFiling: (entryId: string, description: string) => void;
     addVoiceOp: () => void;
     addScan: () => void;
+    addClaim: (claim: Omit<Claim, "status" | "timestamp">) => void;
+    sendClaim: (claimId: string) => Promise<void>;
 }
 
 // Initial/Seed Data (So it looks alive initially)
@@ -54,6 +67,7 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
     const [metrics, setMetrics] = useState<Metrics>(INITIAL_METRICS);
     const [activityLog, setActivityLog] = useState<ActivityLog[]>(INITIAL_LOGS);
     const [activeEntries, setActiveEntries] = useState<CustomsEntry[]>([]);
+    const [claims, setClaims] = useState<Claim[]>([]);
 
     const addFiling = (entryId: string, description: string) => {
         // 1. Update Metrics
@@ -88,6 +102,42 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
 
     const addScan = () => {
         setMetrics(prev => ({ ...prev, processedDocs: prev.processedDocs + 1 }));
+    };
+
+    const addClaim = (claimData: Omit<Claim, "status" | "timestamp">) => {
+        const newClaim: Claim = {
+            ...claimData,
+            status: "PENDING",
+            timestamp: new Date()
+        };
+        setClaims(prev => [newClaim, ...prev]);
+
+        // Add to activity log
+        const log: ActivityLog = {
+            id: `claim-${Date.now()}`,
+            time: "Just now",
+            agent: "Nova Pro",
+            action: `Drafted Shortage Claim for ${claimData.shipmentId}`,
+            status: "Success"
+        };
+        setActivityLog(prev => [log, ...prev].slice(0, 15));
+    };
+
+    const sendClaim = async (claimId: string) => {
+        // Simulated network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        setClaims(prev => prev.map(c => c.id === claimId ? { ...c, status: "SENT" } : c));
+
+        // Update log
+        const log: ActivityLog = {
+            id: `send-${Date.now()}`,
+            time: "Just now",
+            agent: "Nova Act",
+            action: `Sent Official Claim to vendor`,
+            status: "Success"
+        };
+        setActivityLog(prev => [log, ...prev].slice(0, 15));
     };
 
     // 4. "100% Real" Registry Sync
@@ -146,10 +196,13 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
         metrics,
         activityLog,
         activeEntries,
+        claims,
         addFiling,
         addVoiceOp,
-        addScan
-    }), [metrics, activityLog, activeEntries]);
+        addScan,
+        addClaim,
+        sendClaim
+    }), [metrics, activityLog, activeEntries, claims]);
 
     return (
         <GlobalPathwayContext.Provider value={value}>

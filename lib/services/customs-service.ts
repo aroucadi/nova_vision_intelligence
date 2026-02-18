@@ -12,12 +12,13 @@ export interface CustomsEntry {
     status: "FILED" | "CLEARED" | "RELEASED" | "HELD";
     items: Array<{
         description: string;
-        htsus: string;
+        hsCode: string;
+        quantity: number;
         value: number;
-        quantity?: number;
-        unit_price?: number;
     }>;
     totalDuty: number;
+    vendor?: string;
+    vendor_email?: string;
     documents: string[];
 }
 
@@ -59,12 +60,14 @@ export class CustomsService {
                 filerCode: "999",
                 importer: "TechImports LLC",
                 portOfEntry: "LAX",
-                timestamp: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+                timestamp: new Date(Date.now() - 86400000 * 5).toISOString(),
                 status: "RELEASED",
                 items: [
-                    { description: "Wireless Security Cameras", htsus: "8525.80.30", value: 5000, quantity: 50, unit_price: 100 }
+                    { description: "Wireless Security Cameras", hsCode: "8525.80.30", value: 5000, quantity: 50 }
                 ],
                 totalDuty: 0,
+                vendor: "Shenzhen Tech Mfg.",
+                vendor_email: "shipping@shenzhentech.com",
                 documents: ["s3://nova-uploads/invoice_123.pdf"]
             },
             {
@@ -72,26 +75,13 @@ export class CustomsService {
                 filerCode: "999",
                 importer: "Global Textiles Inc",
                 portOfEntry: "NYC",
-                timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+                timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
                 status: "HELD",
                 items: [
-                    { description: "Cotton T-Shirts", htsus: "6109.10.00", value: 2500, quantity: 500, unit_price: 5 }
+                    { description: "Cotton T-Shirts", hsCode: "6109.10.00", value: 2500, quantity: 500 }
                 ],
-                totalDuty: 412.50, // 16.5%
+                totalDuty: 412.50,
                 documents: ["s3://nova-uploads/invoice_456.pdf"]
-            },
-            {
-                entryNumber: "111-9988776-5",
-                filerCode: "999",
-                importer: "Industrial Parts Co",
-                portOfEntry: "CHI",
-                timestamp: new Date().toISOString(), // Today
-                status: "FILED",
-                items: [
-                    { description: "Hydraulic Valves", htsus: "8481.20.00", value: 15000, quantity: 15, unit_price: 1000 }
-                ],
-                totalDuty: 0,
-                documents: ["s3://nova-uploads/invoice_789.pdf"]
             }
         ];
 

@@ -178,7 +178,8 @@ export const WorkflowLoop: React.FC = () => {
     // 30-90: Office -> Nova (Document)
     // 90-150: Nova -> Warehouse (Alert)
     // 150-210: Warehouse -> Nova (Discrepancy)
-    // 210-270: Nova -> Office (Claim)
+    // 210-270: Nova -> Office (Claim Draft)
+    // 270-330: User -> Sent (Resolution)
 
     // Intro Entrance
     const officeEnter = 0;
@@ -190,12 +191,14 @@ export const WorkflowLoop: React.FC = () => {
     const phase2Start = 105;
     const phase3Start = 165;
     const phase4Start = 225;
+    const phase5Start = 285;
 
     // Progress Calculations
     const progress1 = interpolate(frame, [phase1Start, phase1Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
     const progress2 = interpolate(frame, [phase2Start, phase2Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
     const progress3 = interpolate(frame, [phase3Start, phase3Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
     const progress4 = interpolate(frame, [phase4Start, phase4Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
+    const progress5 = interpolate(frame, [phase5Start, phase5Start + 45], [0, 1], { extrapolateRight: 'clamp', easing: Easing.bezier(0.65, 0, 0.35, 1) });
 
     return (
         <AbsoluteFill style={{
@@ -260,10 +263,16 @@ export const WorkflowLoop: React.FC = () => {
                 progress={progress3} color={COLORS.alert}
             />
 
-            {/* 4. Claim to Office (Red) */}
+            {/* 4. Claim Draft to Office (Red) */}
             <DataPacket
                 startX={POS.nova.x} startY={POS.nova.y} endX={POS.office.x} endY={POS.office.y}
                 progress={progress4} color={COLORS.alert}
+            />
+
+            {/* 5. Resolution: Sent Back (Emerald) */}
+            <DataPacket
+                startX={POS.office.x} startY={POS.office.y} endX={POS.nova.x} endY={POS.nova.y}
+                progress={progress5} color={COLORS.warehouse}
             />
 
             {/* TEXT OVERLAY */}
@@ -275,7 +284,8 @@ export const WorkflowLoop: React.FC = () => {
                 {progress1 > 0 && progress1 < 1 && "Start: Invoice Processing"}
                 {progress2 > 0 && progress2 < 1 && "Nova Logic: Proactive Context Update"}
                 {progress3 > 0 && progress3 < 1 && "Voice Action: Discrepancy Reported"}
-                {progress4 > 0 && progress4 < 1 && "Resolution: Claim Drafted"}
+                {progress4 > 0 && progress4 < 1 && "AI Agent: Claim Email Drafted"}
+                {progress5 > 0 && progress5 < 1 && "Human-In-Loop: Claim Verified & Sent"}
             </div>
 
         </AbsoluteFill>

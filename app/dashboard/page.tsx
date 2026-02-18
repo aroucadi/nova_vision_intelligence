@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -8,11 +9,16 @@ import {
   Activity,
   AlertCircle,
   Brain,
-  Zap
+  Zap,
+  Mail,
+  Send,
+  Eye,
+  CheckCircle2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useGlobalPathway } from "@/context/GlobalPathwayContext";
+import { toast } from "sonner";
 import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM, SCALE_UP_ITEM } from "@/components/motion/constants";
 import { Player } from "@remotion/player";
 import { DashboardPulse } from "@/remotion/DashboardPulse";
@@ -81,9 +87,6 @@ export default function DashboardPage() {
                     compositionHeight={150}
                     fps={30}
                     style={{ width: '100%', height: '100%' }}
-                    autoPlay
-                    loop
-                    controls={false}
                   />
                 </div>
                 {/* Overlay Gradient to make text readable/integrated */}
@@ -153,17 +156,36 @@ export default function DashboardPage() {
             </motion.div>
           </motion.div>
 
-          {/* Live System Activity */}
-          <motion.div variants={FADE_UP_ITEM} className="mb-20">
-            <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-emerald-500" /> Live AI Activity Log
-            </h2>
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
-              {activityLog.map((log) => (
-                <ActivityRow key={log.id} time={log.time} agent={log.agent} action={log.action} status={log.status} />
-              ))}
-            </div>
-          </motion.div>
+          {/* Live System Activity & Claims */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
+            {/* Activity Log */}
+            <motion.div variants={FADE_UP_ITEM} className="lg:col-span-2">
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-emerald-500" /> Live AI Activity Log
+              </h2>
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
+                {activityLog.length > 0 ? (
+                  activityLog.map((log) => (
+                    <ActivityRow key={log.id} time={log.time} agent={log.agent} action={log.action} status={log.status} />
+                  ))
+                ) : (
+                  <p className="text-zinc-500 text-sm text-center py-4">No recent activity detected.</p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* AI Claims Inbox (H.I.T.L) */}
+            <motion.div variants={FADE_UP_ITEM} className="lg:col-span-1">
+              <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2">
+                <Brain className="h-4 w-4 text-violet-400" /> Pending Claims (H.I.T.L)
+              </h2>
+              <div className="bg-zinc-900/30 border border-violet-500/10 rounded-2xl p-6 h-full backdrop-blur-sm">
+                <div className="space-y-4">
+                  <ClaimInbox />
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </motion.main>
 
         {/* Footer */}
@@ -188,6 +210,90 @@ function MetricCard({ label, value, sub, icon }: { label: string, value: string,
       </div>
     </div>
   )
+}
+
+function ClaimInbox() {
+  const { claims, sendClaim } = useGlobalPathway();
+  const [viewingClaim, setViewingClaim] = React.useState<string | null>(null);
+  const [sendingId, setSendingId] = React.useState<string | null>(null);
+
+  const handleSend = async (id: string) => {
+    setSendingId(id);
+    toast.promise(sendClaim(id), {
+      loading: 'Transmitting claim to vendor via SES...',
+      success: 'Claim sent successfully!',
+      error: 'Failed to transmit claim.',
+    });
+    // The promise is handled by toast, but we need to clear sending state
+    try {
+      await sendClaim(id);
+    } finally {
+      setSendingId(null);
+    }
+  };
+
+  if (claims.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="p-3 bg-zinc-950 rounded-full border border-zinc-900 mb-3">
+          <Mail className="h-5 w-5 text-zinc-700" />
+        </div>
+        <p className="text-zinc-500 text-sm">No claims pending review.</p>
+        <p className="text-zinc-700 text-xs mt-1">Discrepancies from voice will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {claims.map((claim) => (
+        <div key={claim.id} className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-800 hover:border-violet-500/30 transition-all group">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono text-violet-400">#{claim.shipmentId}</span>
+            <Badge variant="outline" className={claim.status === 'SENT' ? 'text-emerald-400 border-emerald-500/20' : 'text-amber-400 border-amber-500/20'}>
+              {claim.status}
+            </Badge>
+          </div>
+          <p className="text-sm font-medium text-white line-clamp-1 mb-1">{claim.vendor}</p>
+          <p className="text-xs text-zinc-500 mb-4">{claim.vendorEmail}</p>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewingClaim(claim.id)}
+              className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-900 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 border border-zinc-800"
+            >
+              <Eye className="h-3 w-3" /> Review
+            </button>
+            {claim.status === 'PENDING' && (
+              <button
+                onClick={() => handleSend(claim.id)}
+                disabled={sendingId === claim.id}
+                className="flex-1 px-3 py-1.5 rounded-lg bg-violet-600/20 text-xs font-medium text-violet-400 hover:bg-violet-600/30 transition-colors flex items-center justify-center gap-2 border border-violet-500/20 disabled:opacity-50"
+              >
+                <Send className={`h-3 w-3 ${sendingId === claim.id ? 'animate-pulse' : ''}`} />
+                {sendingId === claim.id ? 'Sending...' : 'Send'}
+              </button>
+            )}
+          </div>
+
+          {/* Expanded Review Modal (Simulated) */}
+          {viewingClaim === claim.id && (
+            <div className="mt-4 p-3 rounded-lg bg-zinc-900 border border-zinc-800 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-zinc-400 uppercase">AI Drafted Email</span>
+                <button onClick={() => setViewingClaim(null)} className="text-zinc-500 hover:text-white">×</button>
+              </div>
+              <div className="p-3 bg-zinc-950 rounded border border-zinc-800 max-h-40 overflow-y-auto">
+                <pre className="text-[10px] text-zinc-400 font-mono whitespace-pre-wrap leading-relaxed">
+                  {claim.draft}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ActivityRow({ time, agent, action, status }: { time: string, agent: string, action: string, status: string }) {

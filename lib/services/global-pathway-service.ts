@@ -12,6 +12,8 @@ export interface PathwayContext {
         item: string;
         reportedAt: string;
     };
+    claimDraft?: string;
+    vendorEmail?: string;
     lastUpdated: string;
 }
 
@@ -19,6 +21,7 @@ export interface PathwayService {
     getContext(shipmentId: string): Promise<PathwayContext | null>;
     updateStatus(shipmentId: string, status: PathwayContext["status"], alert?: string): Promise<void>;
     reportDiscrepancy(shipmentId: string, discrepancy: PathwayContext["discrepancy"]): Promise<void>;
+    reportClaim(shipmentId: string, draft: string, vendorEmail: string): Promise<void>;
     initializeShipment(shipmentId: string): Promise<void>;
 }
 
@@ -63,6 +66,17 @@ export class InMemoryPathwayStore implements PathwayService {
             ctx.lastUpdated = new Date().toISOString();
             this.store.set(shipmentId, ctx);
             console.log(`[GlobalPathway] Discrepancy reported for ${shipmentId}:`, discrepancy);
+        }
+    }
+
+    async reportClaim(shipmentId: string, draft: string, vendorEmail: string): Promise<void> {
+        const ctx = this.store.get(shipmentId);
+        if (ctx) {
+            ctx.claimDraft = draft;
+            ctx.vendorEmail = vendorEmail;
+            ctx.lastUpdated = new Date().toISOString();
+            this.store.set(shipmentId, ctx);
+            console.log(`[GlobalPathway] Claim draft saved for ${shipmentId}`);
         }
     }
 }
@@ -158,6 +172,26 @@ export class DynamoDBPathwayStore implements PathwayService {
             }));
         } catch (error) {
             console.error("[DynamoDBPathway] Report Discrepancy Error:", error);
+        }
+    }
+
+    async reportClaim(shipmentId: string, draft: string, vendorEmail: string): Promise<void> {
+        try {
+            await this.client.send(new UpdateCommand({
+                TableName: this.tableName,
+                Key: {
+                    pk: `PATHWAY#${shipmentId}`,
+                    sk: `CONTEXT`
+                },
+                UpdateExpression: "SET claimDraft = :d, vendorEmail = :e, lastUpdated = :t",
+                ExpressionAttributeValues: {
+                    ":d": draft,
+                    ":e": vendorEmail,
+                    ":t": new Date().toISOString()
+                }
+            }));
+        } catch (error) {
+            console.error("[DynamoDBPathway] Report Claim Error:", error);
         }
     }
 }

@@ -109,12 +109,12 @@ Extract structured data from the provided document availability for direct inges
 }
 </data_schema_target>
 
-Think step-by-step:
-1. Locate the Invoice Number and Date (usually top right).
-2. Identify Vendor vs Buyer (Look for "Sold To" vs "Ship To").
-3. Parse the line items table row by row.
-4. Verify that sum(line_items) matches total_amount.
-5. Generate the JSON.`,
+think_step_by_step:
+1. Locate the Invoice Number and Date.
+2. Identify Vendor vs Buyer (Check for logos, "From" vs "To").
+3. CRITICAL: Look for email addresses and phone numbers in the Vendor header.
+4. Parse line items, ensuring total match.
+5. Return JSON.`,
 
   classification: `You are Nova Classifier, a Tariff Engineering AI.
 
@@ -184,7 +184,33 @@ User Question: "${question}"
 4. If the answer is NOT in the document, reply: "I cannot find that information in this specific document."
 </instructions>
 
-Answer:`
+Answer:`,
+
+  claims_draft: `You are Nova Claims Agent, a professional supply chain dispute specialist.
+
+<task>
+Draft a formal, polite but firm "Notice of Shortage" email to a vendor based on a warehouse discrepancy report and the original invoice context.
+</task>
+
+<context>
+INVOICE DATA:
+{{invoiceData}}
+
+DISCREPANCY REPORT:
+{{discrepancy}}
+
+PAST CORRESPONDENCE (RAG):
+{{pastClaims}}
+</context>
+
+<instructions>
+1. Tone: Professional, direct, yet constructive for the partnership.
+2. Content: State the shipment ID, the specific item found short, the quantity missing, and the financial impact.
+3. Call to Action: Request an immediate credit note or a replacement shipment.
+4. Reference any past similar claims if provided in the context to show a pattern if applicable.
+</instructions>
+
+Return ONLY the email body.`,
 } as const;
 
 export type AnalysisType = keyof Omit<typeof PROMPTS, "qa">;

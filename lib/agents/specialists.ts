@@ -180,8 +180,18 @@ export interface ExtractionData {
         quantity?: number;
         unit_price?: number;
         total?: number;
+        discrepancy?: {
+            expected: number;
+            actual: number;
+            item: string;
+            reportedAt: string;
+        };
     }>;
     weights?: { gross?: string; net?: string };
+    vendor_email?: string;
+    vendor_phone?: string;
+    claimDraft?: string;
+    lastUpdated?: string;
 }
 
 export class SearchAgent extends BaseAgent {

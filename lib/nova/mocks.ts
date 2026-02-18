@@ -37,6 +37,7 @@ export const MOCK_DATA = {
                 name: "NovaVision Logistics LLC",
                 address: "1200 Twelfth Ave S, Seattle, WA 98144"
             },
+            vendor_email: "shipping@shenzhentech.com",
             currency: "USD",
             total_amount: 25700.00,
             line_items: [

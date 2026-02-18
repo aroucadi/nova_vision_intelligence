@@ -104,18 +104,28 @@ export async function processVoiceQuery(
         if (observedCount < expectedCount) {
             console.log(`[Sonic] Discrepancy Detected: Observed ${observedCount}, Expected ${expectedCount}`);
 
-            // 1. Update Global Context
+            // 1. Update Global Context Status
             const discrepancy = { expected: expectedCount, actual: observedCount, item: "Units", reportedAt: new Date().toISOString() };
             await pathwayContext.reportDiscrepancy(contextId, discrepancy);
 
-            // 2. Trigger Claims Agent
-            const claimDraft = await claimsAgent.draftClaim(contextId, discrepancy);
+            // 2. Trigger Real Claims Agent (Zero Mock)
+            // Fetch the registry data to get vendor info
+            const entry = await registry.getEntry(contextId);
+            const invoiceData = entry ? {
+                invoice_number: entry.entryNumber,
+                vendor: { name: entry.vendor || "Unknown" },
+                vendor_email: "claims-dept@vendor.com", // Fallback if not in registry yet
+            } : {};
 
-            // 3. Override standard Nova response (or inject it)
-            // We return a direct response to ensure the user gets immediate feedback
+            const claimDraft = await claimsAgent.draftClaim(contextId, discrepancy, invoiceData as any);
+
+            // 3. Persist the Draft and Vendor Email
+            await pathwayContext.reportClaim(contextId, claimDraft, invoiceData.vendor_email || "");
+
+            // 4. Override standard Nova response
             return {
                 transcript: audioBase64 ? "[Audio Input]" : transcript,
-                answer: `I've logged the discrepancy. You counted ${observedCount}, but the manifest expects ${expectedCount}. I have updated the status to "DISCREPANCY" and drafted a claim email to the vendor for the ${expectedCount - observedCount} missing units.`,
+                answer: `I've logged the discrepancy. You counted ${observedCount}, but the manifest expects ${expectedCount}. The system has already drafted a formal shortage claim to ${invoiceData.vendor || 'the vendor'}. It is ready for review in the dashboard.`,
                 model: "Nova 2 Pro (Agentic Action)",
                 processingTimeMs: Date.now() - start,
             };

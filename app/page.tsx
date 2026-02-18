@@ -134,7 +134,7 @@ export default function LandingPage() {
                         <div className="aspect-video w-full bg-zinc-900/50 relative">
                             <Player
                                 component={WorkflowLoop}
-                                durationInFrames={300}
+                                durationInFrames={360}
                                 compositionWidth={1280}
                                 compositionHeight={720}
                                 fps={30}
