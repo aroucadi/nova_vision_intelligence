@@ -172,7 +172,7 @@ INSTRUCTION:
     }
 }
 
-import { vectorStore } from "../vector-store";
+import { vectorStore } from "../nova/vector-store";
 
 // Shared Interface for Extracted Data
 export interface ExtractionData {
