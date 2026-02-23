@@ -4,10 +4,25 @@ import { type AgentResponse } from "./types";
 import { type ImageFormat, type FileFormat, type DocumentFormat } from "../nova/types";
 import { novaEmbeddings } from "../nova/embeddings";
 
+import { learningService } from "../services/learning-service";
+
 export abstract class BaseAgent {
     abstract readonly id: string;
     abstract readonly name: string;
     abstract readonly description: string;
+
+    // Level 3: Learning Support
+    protected async injectLearnings(topic: string, currentPrompt: string): Promise<string> {
+        const learnings = await learningService.retrieveLearnings(topic);
+        if (learnings.length === 0) return currentPrompt;
+
+        return `${currentPrompt}
+
+<historical_learnings>
+The following rules were learned from previous sessions. Apply them strictly:
+${learnings.map(l => `- ${l}`).join("\n")}
+</historical_learnings>`;
+    }
 
     abstract run(context: { base64: string; format: FileFormat; filename: string;[key: string]: unknown }): Promise<AgentResponse>;
 
@@ -41,6 +56,10 @@ export class AnalyzerAgent extends BaseAgent {
 
     async run(context: { base64: string; format: FileFormat; filename: string; extractionData?: unknown }): Promise<AgentResponse> {
         let prompt = PROMPTS.summary as string;
+
+        // Level 3: Learning Search
+        const vendor = (context.extractionData as ExtractionData)?.vendor?.name || "general";
+        prompt = await this.injectLearnings(vendor, prompt);
 
         // Context Injection: If we have structured data, feed it to the Analyst
         if (context.extractionData) {
@@ -79,10 +98,13 @@ export class ExtractorAgent extends BaseAgent {
                 result = await novaClient.extractStructured(context.base64, schema, context.format as ImageFormat);
             } else {
                 // For documents, we use Nova Pro for reasoning-based extraction with strict JSON enforcement
-                const prompt = `${PROMPTS.extraction}
+                let prompt = `${PROMPTS.extraction}
                 
                 CRITICAL: You must return ONLY valid JSON. No markdown formatting, no comments, no preambles.
                 Ensure all numbers are numbers, not strings. Usage of this data will fail if JSON is invalid.`;
+
+                // Level 3: Learning Search (Fallback path)
+                prompt = await this.injectLearnings(context.filename, prompt);
 
                 const response = await novaClient.analyzeDocument(context.base64, context.filename, context.format as DocumentFormat, prompt);
                 const text = response.text.trim();
@@ -145,6 +167,10 @@ INSTRUCTION:
 3. Incorporate the HISTORICAL RAG CONTEXT into your risk determination.
 </context_injection>`;
         }
+
+        // Level 3: Learning Search
+        const topic = context.extractionData?.vendor?.name || "compliance";
+        prompt = await this.injectLearnings(topic, prompt);
 
         const response = await this.callNova(prompt, context.base64, context.format, context.filename);
 
@@ -268,5 +294,53 @@ export class SearchAgent extends BaseAgent {
         } catch (error: unknown) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
+    }
+}
+
+import { type PipelineState } from "./types";
+
+export class LearnerAgent extends BaseAgent {
+    readonly id = "learner";
+    readonly name = "Experience Architect";
+    readonly description = "Reflects on pipeline outcomes to extract persistent rules and patterns";
+
+    async run(context: { base64: string; format: FileFormat; filename: string; pipeline?: PipelineState;[key: string]: unknown }): Promise<AgentResponse> {
+        try {
+            if (!context.pipeline) {
+                return { success: false, error: "Learner requires PipelineState in context" };
+            }
+            // Nova Learner doesn't need the image, just the pipeline JSON
+            const prompt = PROMPTS.learner.replace("{{pipelineState}}", JSON.stringify(context.pipeline, null, 2));
+
+            // We use Nova Pro for reasoning/reflection
+            const result = await novaClient.analyzeDocument("", "pipeline.json", "text" as any, prompt);
+
+            let data;
+            try {
+                data = JSON.parse(result.text.trim());
+            } catch (e) {
+                // Cleanup common JSON issues
+                const clean = result.text.substring(result.text.indexOf("{"), result.text.lastIndexOf("}") + 1);
+                data = JSON.parse(clean);
+            }
+
+            // Save each significant learning
+            if (data.learnings) {
+                for (const l of data.learnings) {
+                    if (l.confidence > 0.7) {
+                        await learningService.saveLearning(l);
+                    }
+                }
+            }
+
+            return { success: true, data };
+        } catch (error: unknown) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    }
+
+    // Learner doesn't use the standard run signature strictly, but we implement it for compatibility
+    async runStandard(context: { base64: string; format: FileFormat; filename: string }): Promise<AgentResponse> {
+        return { success: false, error: "Learner requires PipelineState" };
     }
 }

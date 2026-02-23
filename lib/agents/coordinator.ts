@@ -170,11 +170,19 @@ export class AgentCoordinator {
             });
 
 
-            // === COMPLETION ===
-            pipeline.overallStatus = pipeline.tasks.every(t => t.status === "completed")
-                ? "completed"
-                : "failed";
+            // === PHASE 4: LEARNING (Post-Flight Reflection) ===
+            const finalStatus = pipeline.tasks.every(t => t.status === "completed") ? "completed" : "failed";
+            pipeline.overallStatus = finalStatus;
             pipeline.endTime = new Date().toISOString();
+
+            if (finalStatus === "completed") {
+                console.log(`[Pipeline] Starting Learning Phase (Reflection)...`);
+                const learner = new (require("./specialists").LearnerAgent)();
+                const learningRes = await learner.run({ ...context, pipeline });
+                if (learningRes.success) {
+                    console.log(`[Pipeline] Learned ${learningRes.data?.learnings?.length || 0} items from this session.`);
+                }
+            }
 
             return pipeline;
 
