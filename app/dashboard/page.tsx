@@ -15,7 +15,7 @@ import {
   Eye,
   CheckCircle2
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useGlobalPathway } from "@/context/GlobalPathwayContext";
 import { toast } from "sonner";
@@ -181,7 +181,14 @@ export default function DashboardPage() {
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-4">
                 {activityLog.length > 0 ? (
                   activityLog.map((log) => (
-                    <ActivityRow key={log.id} time={log.time} agent={log.agent} action={log.action} status={log.status} />
+                    <ActivityRow
+                      key={log.id}
+                      time={log.time}
+                      agent={log.agent}
+                      action={log.action}
+                      status={log.status}
+                      reasoning={log.reasoning}
+                    />
                   ))
                 ) : (
                   <p className="text-zinc-500 text-sm text-center py-4">No recent activity detected.</p>
@@ -311,20 +318,58 @@ function ClaimInbox() {
   );
 }
 
-function ActivityRow({ time, agent, action, status }: { time: string, agent: string, action: string, status: string }) {
+function ActivityRow({ time, agent, action, status, reasoning }: { time: string, agent: string, action: string, status: string, reasoning?: string }) {
+  const [showTrace, setShowTrace] = React.useState(false);
+
   return (
-    <div className="flex items-center justify-between text-sm p-3 hover:bg-white/5 rounded-lg transition-colors border-b border-zinc-800/50 last:border-0 hover:scale-[1.01] transition-transform duration-200 cursor-default">
-      <div className="flex items-center gap-4">
-        <span className="text-zinc-500 font-mono w-20">{time}</span>
-        <Badge variant="outline" className={`
-                    ${agent === 'Nova Act' ? 'text-cyan-400 border-cyan-500/20' : ''}
-                    ${agent === 'Nova Pro' ? 'text-violet-400 border-violet-500/20' : ''}
-                    ${agent === 'Nova Vision' ? 'text-blue-400 border-blue-500/20' : ''}
-                    ${agent === 'Nova Sonic' ? 'text-pink-400 border-pink-500/20' : ''}
-                `}>{agent}</Badge>
-        <span className="text-zinc-300">{action}</span>
+    <div className="group/row">
+      <div
+        onClick={() => reasoning && setShowTrace(!showTrace)}
+        className="flex items-center justify-between text-sm p-3 hover:bg-white/5 rounded-lg transition-all border-b border-zinc-800/50 last:border-0 hover:scale-[1.01] duration-200 cursor-pointer"
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-zinc-500 font-mono w-20">{time}</span>
+          <Badge variant="outline" className={`
+                            ${agent === 'Nova Act' ? 'text-cyan-400 border-cyan-500/20' : ''}
+                            ${agent === 'Nova Pro' ? 'text-violet-400 border-violet-500/20' : ''}
+                            ${agent === 'Nova Vision' ? 'text-blue-400 border-blue-500/20' : ''}
+                            ${agent === 'Nova Sonic' ? 'text-pink-400 border-pink-500/20' : ''}
+                        `}>{agent}</Badge>
+          <span className="text-zinc-300">{action}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {reasoning && (
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-tighter group-hover/row:text-violet-400/70 transition-colors flex items-center gap-1">
+              <Brain className="h-3 w-3" /> {showTrace ? 'Hide Trace' : 'View Trace'}
+            </span>
+          )}
+          <span className="text-emerald-500/80 text-xs font-medium px-2 py-1 bg-emerald-500/10 rounded-full">{status}</span>
+        </div>
       </div>
-      <span className="text-emerald-500/80 text-xs font-medium px-2 py-1 bg-emerald-500/10 rounded-full">{status}</span>
+
+      <AnimatePresence>
+        {showTrace && reasoning && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={SPRING_PHYSICS}
+            className="overflow-hidden"
+          >
+            <div className="mx-3 mb-3 p-4 bg-zinc-950 border border-violet-500/20 rounded-xl relative">
+              <div className="absolute top-2 right-2 opacity-10">
+                <Brain className="h-12 w-12 text-violet-400" />
+              </div>
+              <p className="text-[10px] font-bold text-violet-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <Zap className="h-3 w-3" /> Agentic Chain-of-Thought
+              </p>
+              <p className="text-xs text-zinc-400 leading-relaxed font-mono italic">
+                "{reasoning}"
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
