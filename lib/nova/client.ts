@@ -17,17 +17,22 @@ import { NOVA_MODELS, type ImageFormat } from "./types";
  * Features: extended thinking, structured output, tool use
  */
 export class NovaClient {
-    private client: BedrockRuntimeClient;
+    private _client: BedrockRuntimeClient | null = null;
 
-    constructor() {
-        this.client = new BedrockRuntimeClient({
-            region: process.env.AWS_REGION || "us-east-1",
-            credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-            },
-        });
+    private get client(): BedrockRuntimeClient {
+        if (!this._client) {
+            this._client = new BedrockRuntimeClient({
+                region: process.env.AWS_REGION || "us-east-1",
+                credentials: {
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+                },
+            });
+        }
+        return this._client;
     }
+
+    constructor() { }
 
     /**
      * Core Converse API call to Nova 2 Lite

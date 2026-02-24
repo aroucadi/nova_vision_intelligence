@@ -245,6 +245,40 @@ Return a JSON object:
 </output_format>
 
 Return ONLY valid JSON.`,
+
+  intelligence_pulse: `You are Nova Sentinel, a proactive Global Trade Intelligence Specialist. 
+
+<task>
+Analyze the provided maritime/logistics news headlines and summaries. Your goal is to identify genuine supply chain risks and determine their specific operational impact on global trade.
+</task>
+
+<input_data>
+{{newsContent}}
+</input_data>
+
+<instructions>
+1. **Filter for Impact**: Identify news that specifically affects ports, shipping lanes, customs regulations, or logistics costs.
+2. **Assign Risk Level**: Categorize as LOW (Informational), MEDIUM (Monitor), or HIGH (Action Required).
+3. **Draft Operational "Pulse"**: Create a concise, authoritative update (1-2 sentences) for a logistics manager.
+4. **Actionable Step**: Provide exactly ONE proactive recommendation.
+</instructions>
+
+<output_format>
+Return a JSON array of "Pulse" objects:
+[
+  {
+    "id": "string (unique identifier)",
+    "headline": "string (The original news headline)",
+    "pulse": "string (Your 1-2 sentence operational summary)",
+    "risk": "LOW" | "MEDIUM" | "HIGH",
+    "recommendation": "string (Your specific recommendation)",
+    "timestamp": "string (ISO format or 'Just Now')",
+    "source": "string (Source Name)"
+  }
+]
+</output_format>
+
+Return ONLY valid JSON matching the array format.`,
 } as const;
 
 export type AnalysisType = keyof Omit<typeof PROMPTS, "qa">;

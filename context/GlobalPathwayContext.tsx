@@ -36,16 +36,28 @@ export interface CustomsEntry {
     timestamp: Date;
 }
 
+export interface PulseItem {
+    id: string;
+    headline: string;
+    pulse: string;
+    risk: "LOW" | "MEDIUM" | "HIGH";
+    recommendation: string;
+    timestamp: string;
+    source: string;
+}
+
 interface GlobalPathwayContextType {
     metrics: Metrics;
     activityLog: ActivityLog[];
     activeEntries: CustomsEntry[];
     claims: Claim[];
+    intelligencePulse: PulseItem[];
     addFiling: (entryId: string, description: string) => void;
     addVoiceOp: () => void;
     addScan: () => void;
     addClaim: (claim: Omit<Claim, "status" | "timestamp">) => void;
     sendClaim: (claimId: string) => Promise<void>;
+    refreshPulse: () => Promise<void>;
 }
 
 // Initial/Seed Data (So it looks alive initially)
@@ -78,6 +90,17 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
     const [activityLog, setActivityLog] = useState<ActivityLog[]>(INITIAL_LOGS);
     const [activeEntries, setActiveEntries] = useState<CustomsEntry[]>([]);
     const [claims, setClaims] = useState<Claim[]>([]);
+    const [intelligencePulse, setIntelligencePulse] = useState<PulseItem[]>([
+        {
+            id: "initial",
+            headline: "Logistics Sentinel Active",
+            pulse: "Connecting to live global trade feeds. Scalling maritime news for operational risks...",
+            risk: "LOW",
+            recommendation: "Standby for real-time intelligence injection.",
+            timestamp: "Just Now",
+            source: "LogisticsOS Internal"
+        }
+    ]);
 
     const addFiling = (entryId: string, description: string) => {
         // 1. Update Metrics
@@ -152,6 +175,18 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
         setActivityLog(prev => [log, ...prev].slice(0, 15));
     };
 
+    const refreshPulse = async () => {
+        try {
+            const res = await fetch("/api/intelligence/pulse");
+            const data = await res.json();
+            if (data.success && Array.isArray(data.pulses)) {
+                setIntelligencePulse(data.pulses);
+            }
+        } catch (err) {
+            console.error("Failed to refresh intelligence pulse:", err);
+        }
+    };
+
     // 4. "100% Real" Registry Sync
     React.useEffect(() => {
         const syncRegistry = async () => {
@@ -211,17 +246,27 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
         return () => clearInterval(interval);
     }, []);
 
+    // 5. Intelligence Pulse Sync (Real Port Data)
+    React.useEffect(() => {
+        refreshPulse();
+        // Poll for fresh world news every 2 minutes (Logistics moves fast, but not *that* fast)
+        const pulseInterval = setInterval(refreshPulse, 120000);
+        return () => clearInterval(pulseInterval);
+    }, []);
+
     const value = React.useMemo(() => ({
         metrics,
         activityLog,
         activeEntries,
         claims,
+        intelligencePulse,
         addFiling,
         addVoiceOp,
         addScan,
         addClaim,
-        sendClaim
-    }), [metrics, activityLog, activeEntries, claims]);
+        sendClaim,
+        refreshPulse
+    }), [metrics, activityLog, activeEntries, claims, intelligencePulse]);
 
     return (
         <GlobalPathwayContext.Provider value={value}>

@@ -17,21 +17,12 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { useGlobalPathway } from "@/context/GlobalPathwayContext";
+import { useGlobalPathway, PulseItem } from "@/context/GlobalPathwayContext";
 import { toast } from "sonner";
 import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM, SCALE_UP_ITEM } from "@/components/motion/constants";
-import dynamic from "next/dynamic";
-
-const Player = dynamic(() => import("@remotion/player").then(mod => mod.Player), {
-  ssr: false,
-});
-
-const DashboardPulse = dynamic(() => import("@/remotion/DashboardPulse").then(mod => mod.DashboardPulse), {
-  ssr: false,
-});
 
 export default function DashboardPage() {
-  const { metrics, activityLog } = useGlobalPathway();
+  const { metrics, activityLog, intelligencePulse, refreshPulse } = useGlobalPathway();
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white selection:bg-violet-500/30">
@@ -87,29 +78,8 @@ export default function DashboardPage() {
             ))}
 
             {/* LIVE SYSTEM PULSE WIDGET */}
-            <motion.div variants={FADE_UP_ITEM} className="col-span-1">
-              <div className="h-full rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden relative group">
-                <div className="absolute inset-0 z-0">
-                  <Player
-                    component={DashboardPulse}
-                    acknowledgeRemotionLicense
-                    durationInFrames={120}
-                    compositionWidth={300}
-                    compositionHeight={150}
-                    fps={30}
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                </div>
-                {/* Overlay Gradient to make text readable/integrated */}
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/90 to-transparent z-10" />
-
-                <div className="absolute bottom-0 left-0 p-4 z-20 w-full">
-                  <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-2">
-                    <Activity className="h-3 w-3 text-emerald-400 animate-pulse" /> System Load
-                  </p>
-                  <p className="text-xl font-bold text-white">Optimal</p>
-                </div>
-              </div>
+            <motion.div variants={FADE_UP_ITEM} className="col-span-1 md:col-span-5">
+              <IntelligencePulse pulses={intelligencePulse} />
             </motion.div>
 
           </motion.div>
@@ -316,6 +286,43 @@ function ClaimInbox() {
       ))}
     </div>
   );
+}
+
+function IntelligencePulse({ pulses }: { pulses: PulseItem[] }) {
+  return (
+    <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm overflow-hidden relative group">
+      <div className="p-4 border-b border-violet-500/10 flex items-center justify-between">
+        <h3 className="text-xs font-bold text-violet-400 uppercase tracking-widest flex items-center gap-2">
+          <Activity className="h-3 w-3 animate-pulse" /> Real-World Intelligence Pulse (Nova Sentinel)
+        </h3>
+        <span className="text-[10px] text-zinc-500 font-mono italic">Live RSS: gCaptain Maritime Feed</span>
+      </div>
+      <div className="flex overflow-x-auto p-4 gap-4 no-scrollbar">
+        {pulses.map((pulse, i) => (
+          <div key={pulse.id || i} className="min-w-[300px] bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4 flex flex-col justify-between hover:border-violet-500/40 transition-colors">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <Badge variant="outline" className={`
+                                ${pulse.risk === 'HIGH' ? 'text-rose-400 border-rose-500/20 bg-rose-500/5' : ''}
+                                ${pulse.risk === 'MEDIUM' ? 'text-amber-400 border-amber-500/20 bg-amber-500/5' : ''}
+                                ${pulse.risk === 'LOW' ? 'text-zinc-400 border-zinc-500/20 bg-zinc-500/5' : ''}
+                            `}>
+                  {pulse.risk} Risk
+                </Badge>
+                <span className="text-[10px] text-zinc-600 font-mono">{pulse.timestamp}</span>
+              </div>
+              <h4 className="text-sm font-bold text-white mb-2 line-clamp-2">{pulse.headline}</h4>
+              <p className="text-xs text-zinc-400 leading-relaxed italic mb-3">"{pulse.pulse}"</p>
+            </div>
+            <div className="pt-3 border-t border-zinc-800/50">
+              <p className="text-[9px] font-bold text-violet-500 uppercase tracking-tighter mb-1">Agentic Recommendation</p>
+              <p className="text-[11px] text-zinc-300 font-medium">{pulse.recommendation}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function ActivityRow({ time, agent, action, status, reasoning }: { time: string, agent: string, action: string, status: string, reasoning?: string }) {
