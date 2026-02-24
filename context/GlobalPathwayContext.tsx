@@ -160,7 +160,7 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
                     // Update metrics based on real data
                     setMetrics(prev => ({
                         ...prev,
-                        filings: prev.filings + realEntries.length
+                        filings: INITIAL_METRICS.filings + realEntries.length
                     }));
 
                     // Prepend to activity log if recent
@@ -176,8 +176,15 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
                     if (recentLogs.length > 0) {
                         // Merge with initial logs but avoid duplicates if possible (simple prepend here)
                         setActivityLog(prev => {
-                            // simplistic dedup by ID check or just prepend
-                            return [...recentLogs, ...prev].slice(0, 15);
+                            const allLogs = [...recentLogs, ...prev];
+                            const uniqueMap = new Map();
+                            allLogs.forEach(log => {
+                                if (!uniqueMap.has(log.id)) {
+                                    uniqueMap.set(log.id, log);
+                                }
+                            });
+                            const uniqueLogs = Array.from(uniqueMap.values()) as ActivityLog[];
+                            return uniqueLogs.slice(0, 15);
                         });
                     }
                 }

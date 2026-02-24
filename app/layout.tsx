@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Use a high-quality system font stack instead of external Google Fonts to ensure build stability in offline/restricted environments.
+const interVariable = "--font-geist-sans";
+const jetbrainsMonoVariable = "--font-geist-mono";
 
 export const metadata: Metadata = {
   title: "NovaVision Intelligence | Amazon Nova AI Hackathon",
@@ -36,8 +29,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          :root {
+            ${interVariable}: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            ${jetbrainsMonoVariable}: 'JetBrains Mono', 'Fira Code', 'Ubuntu Mono', 'Courier New', monospace;
+          }
+        `}} />
+      </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} antialiased bg-zinc-950 text-white`}
+        className={`antialiased bg-zinc-950 text-white`}
+        style={{ fontFamily: `var(${interVariable})` }}
       >
         <GlobalPathwayProvider>
           {children}

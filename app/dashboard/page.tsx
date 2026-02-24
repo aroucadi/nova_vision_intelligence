@@ -20,8 +20,15 @@ import { Badge } from "@/components/ui/badge";
 import { useGlobalPathway } from "@/context/GlobalPathwayContext";
 import { toast } from "sonner";
 import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM, SCALE_UP_ITEM } from "@/components/motion/constants";
-import { Player } from "@remotion/player";
-import { DashboardPulse } from "@/remotion/DashboardPulse";
+import dynamic from "next/dynamic";
+
+const Player = dynamic(() => import("@remotion/player").then(mod => mod.Player), {
+  ssr: false,
+});
+
+const DashboardPulse = dynamic(() => import("@/remotion/DashboardPulse").then(mod => mod.DashboardPulse), {
+  ssr: false,
+});
 
 export default function DashboardPage() {
   const { metrics, activityLog } = useGlobalPathway();
@@ -82,6 +89,7 @@ export default function DashboardPage() {
                 <div className="absolute inset-0 z-0">
                   <Player
                     component={DashboardPulse}
+                    acknowledgeRemotionLicense
                     durationInFrames={120}
                     compositionWidth={300}
                     compositionHeight={150}

@@ -3,7 +3,7 @@ import { registry } from "@/lib/agents/registry";
 
 export async function GET() {
     try {
-        const entries = registry.getAllEntries();
+        const entries = await registry.getAllEntries();
         return NextResponse.json({
             success: true,
             entries

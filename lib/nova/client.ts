@@ -40,6 +40,7 @@ export class NovaClient {
             temperature?: number;
             enableReasoning?: boolean;
             reasoningEffort?: "low" | "medium" | "high";
+            model?: "pro" | "lite";
         } = {}
     ): Promise<{
         text: string;
@@ -51,10 +52,11 @@ export class NovaClient {
             temperature = 0.7,
             enableReasoning = false,
             reasoningEffort = "medium",
+            model = "pro",
         } = options;
 
         const input: ConverseCommandInput = {
-            modelId: NOVA_MODELS.PRO,
+            modelId: model === "lite" ? NOVA_MODELS.LITE : NOVA_MODELS.PRO,
             messages,
             inferenceConfig: {
                 maxTokens,

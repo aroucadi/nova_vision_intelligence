@@ -18,7 +18,7 @@ class VectorStore {
         if (kbId) {
             console.log(`[VectorStore] Using Real Bedrock RAG for query: ${query}`);
             const results = await kbService.retrieve(query, limit);
-            return results.map((r, i) => ({
+            return results.map((r: RetrievalResult, i: number) => ({
                 id: i.toString(),
                 metadata: {
                     filename: r.metadata.filename || "unknown_doc",

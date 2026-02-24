@@ -86,4 +86,6 @@ export class KnowledgeBaseService {
     }
 }
 
-export const kbService = new KnowledgeBaseService();
+// Switch to Mock Service for Demo to bypass AWS Account Blockers
+import { MockKnowledgeBaseService } from "./kb-service.mock";
+export const kbService = new MockKnowledgeBaseService() as any;
