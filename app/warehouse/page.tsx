@@ -22,16 +22,16 @@ function WarehouseContent() {
     return (
         <div className="relative max-w-md mx-auto px-6 py-12 flex flex-col min-h-screen">
             <header className="mb-12">
-                <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white flex items-center gap-2 mb-6">
-                    <ArrowLeft className="h-4 w-4" /> Back to Command Center
+                <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white flex items-center gap-2 mb-6 transition-colors font-medium">
+                    <ArrowLeft className="h-4 w-4" /> Finalize Lifecycle Journey
                 </Link>
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="p-3 bg-pink-500/20 rounded-xl">
+                    <div className="p-3 bg-pink-500/20 rounded-xl border border-pink-500/20">
                         <Mic className="h-6 w-6 text-pink-400" />
                     </div>
-                    <h1 className="text-2xl font-bold">Logistics Copilot</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Floor Verification</h1>
                 </div>
-                <p className="text-zinc-400">Hands-free voice operations for warehouse staff.</p>
+                <p className="text-zinc-400">Hands-free discrepancy checking for ground operations.</p>
             </header>
 
             <main className="flex-1 flex flex-col justify-center">

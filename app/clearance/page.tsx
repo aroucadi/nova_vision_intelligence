@@ -128,16 +128,16 @@ export default function ClearancePage() {
 
             <div className="relative max-w-5xl mx-auto px-6 py-12">
                 <header className="mb-12">
-                    <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white flex items-center gap-2 mb-6">
-                        <ArrowLeft className="h-4 w-4" /> Back to Command Center
+                    <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-white flex items-center gap-2 mb-6 transition-colors">
+                        <ArrowLeft className="h-4 w-4" /> Back to Lifecycle Overview
                     </Link>
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="p-3 bg-violet-500/20 rounded-xl">
+                        <div className="p-3 bg-violet-500/20 rounded-xl border border-violet-500/20">
                             <FileText className="h-6 w-6 text-violet-400" />
                         </div>
-                        <h1 className="text-2xl font-bold">New Customs Entry</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">Global Compliance Audit</h1>
                     </div>
-                    <p className="text-zinc-400">Upload shipping documents for automated classification and compliance checks.</p>
+                    <p className="text-zinc-400">Streamlining document intake and automated HS classification.</p>
                 </header>
 
                 <main className="space-y-8">
@@ -154,11 +154,11 @@ export default function ClearancePage() {
                             >
                                 <div className="flex items-center justify-between flex-wrap gap-4">
                                     <div>
-                                        <h3 className="font-semibold text-white">Ready to Process</h3>
+                                        <h3 className="font-semibold text-white">Document Stream Ready</h3>
                                         <div className="flex items-center gap-2 text-sm text-zinc-400 mt-1">
-                                            <span>3 Nova Agents standing by</span>
+                                            <span>3 Specialty Brokers engaged</span>
                                             <span className="px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 text-xs font-mono border border-violet-500/20">
-                                                Powered by Nova 2 Lite (Multimodal)
+                                                Active Compliance Engine
                                             </span>
                                         </div>
                                     </div>
@@ -198,12 +198,12 @@ export default function ClearancePage() {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                                        Automated Customs Entry
+                                                        Autonomous Filing
                                                         <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono border border-cyan-500/20">
-                                                            Nova Act
+                                                            EDI Gateway
                                                         </span>
                                                     </h3>
-                                                    <p className="text-sm text-zinc-400">Generate and transmit filing payload to Port Authority.</p>
+                                                    <p className="text-sm text-zinc-400">Transmit digital declaration to port authorities.</p>
                                                 </div>
                                             </div>
                                             {filingStatus === "idle" && (

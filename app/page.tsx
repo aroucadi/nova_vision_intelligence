@@ -38,7 +38,7 @@ export default function LandingPage() {
                             <Brain className="h-5 w-5 text-white" />
                         </div>
                         <span className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-                            NovaVision
+                            LogisticsOS
                         </span>
                     </div>
                     <div className="flex items-center gap-4">
@@ -81,9 +81,9 @@ export default function LandingPage() {
                             transition={{ ...SPRING_PHYSICS, delay: 0.1 }}
                             className="text-6xl md:text-8xl font-bold tracking-tighter leading-[1.1]"
                         >
-                            Turn Supply Chain <br />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 animate-gradient-x">
-                                Chaos into Intelligence.
+                            The Autonomous <br />
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 via-violet-400 to-cyan-400 animate-gradient-x">
+                                OS for Global Trade.
                             </span>
                         </motion.h1>
 
@@ -93,8 +93,8 @@ export default function LandingPage() {
                             transition={{ ...SPRING_PHYSICS, delay: 0.2 }}
                             className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed"
                         >
-                            The first Autonomous Logistics OS powered by Multimodal AI.
-                            Instant clearance, proactive compliance, and hands-free warehouse ops.
+                            Accelerate clearance, automate compliance, and empower your workforce. 
+                            The end-to-end intelligence layer for modern supply chain operations.
                         </motion.p>
 
                         <motion.div
@@ -181,14 +181,14 @@ export default function LandingPage() {
                             <div className="relative z-10 flex-1 flex flex-col">
                                 <h3 className="text-2xl font-bold mb-3 flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-violet-500/10 text-violet-400"><Brain className="h-5 w-5" /></div>
-                                    Nova Vision
+                                    Document Audit
                                 </h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Instantly analyze Commercial Invoices and BOLs. Support for 25+ document types with 99.8% extraction accuracy using <span className="text-violet-400">Nova 2 Pro</span>.
+                                    Instantly analyze commercial invoices and BOLs. Support for 25+ document types with 99.8% extraction accuracy and deep compliance checking.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Active • 24ms latency
+                                    Active • Compliance Engine
                                 </div>
                             </div>
                         </motion.div>
@@ -210,14 +210,14 @@ export default function LandingPage() {
                             <div className="relative z-10 flex-1 flex flex-col">
                                 <h3 className="text-2xl font-bold mb-3 flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><Workflow className="h-5 w-5" /></div>
-                                    Nova Act
+                                    Autonomous Filing
                                 </h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Autonomous execution. Takes extracted data and generates compliant filing payloads via <span className="text-cyan-400">Nova 2 Pro</span> reasoning agents.
+                                    Frictionless execution. Automatically generate and transmit compliant filing payloads directly to port authorities and customs partners.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Active • Automated Payload Gen
+                                    Active • Automated EDI
                                 </div>
                             </div>
                         </motion.div>
@@ -239,14 +239,14 @@ export default function LandingPage() {
                             <div className="relative z-10 flex-1 flex flex-col">
                                 <h3 className="text-2xl font-bold mb-3 flex items-center gap-3">
                                     <div className="p-2 rounded-lg bg-pink-500/10 text-pink-400"><Mic className="h-5 w-5" /></div>
-                                    Nova Voice
+                                    Ground Verification
                                 </h3>
                                 <p className="text-zinc-400 leading-relaxed mb-6">
-                                    Hands-free warehouse operations. Workers simply speak to verify stock, powered by ultra-low latency <span className="text-pink-400">Nova 2 Pro</span>.
+                                    Hands-free warehouse operations. Empower ground staff to verify stock, track shipments, and report discrepancies using natural voice.
                                 </p>
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center gap-2 text-sm text-zinc-500 font-mono">
                                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Active • &lt;600ms response
+                                    Active • Real-time Voice Ops
                                 </div>
                             </div>
                         </motion.div>
