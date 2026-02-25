@@ -31,7 +31,8 @@ export class CustomsService {
                 Item: entry,
             }));
         } catch (e) {
-            console.warn("[CustomsService] DynamoDB unreachable, using local mock for fileEntry", e);
+            console.error("[CustomsService] DynamoDB unreachable, failing fileEntry", e);
+            throw new Error("Persistence Failure: Entry not stored.");
         }
         return entry;
     }
@@ -70,32 +71,9 @@ export class CustomsService {
                 TableName: TABLE_NAME,
             }));
             return (result.Items as CustomsEntry[]) || [];
-        } catch (e) {
-            console.warn("[CustomsService] DynamoDB unreachable, returning sandbox fallbacks", e);
-            return [
-                {
-                    entryNumber: "998-1122334-1",
-                    filerCode: "888",
-                    importer: "Sandbox Industries",
-                    portOfEntry: "SEA",
-                    timestamp: new Date().toISOString(),
-                    status: "HELD",
-                    items: [{ description: "OLED Displays", hsCode: "8529.90.10", quantity: 100, value: 12000 }],
-                    totalDuty: 120,
-                    documents: []
-                },
-                {
-                    entryNumber: "998-4455667-2",
-                    filerCode: "888",
-                    importer: "Sandbox Industries",
-                    portOfEntry: "SEA",
-                    timestamp: new Date(Date.now() - 3600000).toISOString(),
-                    status: "CLEARED",
-                    items: [{ description: "Lithium Batteries", hsCode: "8507.60.00", quantity: 50, value: 4500 }],
-                    totalDuty: 0,
-                    documents: []
-                }
-            ];
+        } catch (e: any) {
+            console.error("[CustomsService] DynamoDB Scan failed:", e.message || e);
+            return []; // Fail gracefully with empty data rather than faking reality
         }
     }
 

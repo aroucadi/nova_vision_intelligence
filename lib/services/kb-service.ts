@@ -22,8 +22,12 @@ export class KnowledgeBaseService {
 
     constructor() {
         const region = process.env.AWS_REGION || "us-east-1";
-        this.runtimeClient = new BedrockAgentRuntimeClient({ region });
-        this.agentClient = new BedrockAgentClient({ region });
+        const credentials = {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        };
+        this.runtimeClient = new BedrockAgentRuntimeClient({ region, credentials });
+        this.agentClient = new BedrockAgentClient({ region, credentials });
         this.kbId = process.env.KNOWLEDGE_BASE_ID || "";
         this.dataSourceId = process.env.DATA_SOURCE_ID || "";
     }
@@ -86,6 +90,5 @@ export class KnowledgeBaseService {
     }
 }
 
-// Switch to Mock Service for Demo to bypass AWS Account Blockers
-import { MockKnowledgeBaseService } from "./kb-service.mock";
-export const kbService = new MockKnowledgeBaseService() as any;
+// Production-ready real service export
+export const kbService = new KnowledgeBaseService();

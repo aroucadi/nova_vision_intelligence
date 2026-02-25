@@ -40,11 +40,12 @@ ${learnings.map(l => `- ${l}`).join("\n")}
                 data: result.text,
                 usage: result.usage,
             };
-        } catch (error: unknown) {
-            console.warn(`[BaseAgent] Nova API unreachable, using generic fallback for ${this.id}`, error);
+        } catch (error: any) {
+            console.error(`[BaseAgent] Nova API call failed for ${this.id}:`, error.message || error);
             return {
-                success: true, // Return success so the pipeline continues in "Simulated Mode"
-                data: `[Simulated Mode] This is a high-fidelity intelligence result for ${this.name} generated via fail-safe logic as the cloud endpoint was unreachable. The shipment appears to be in order based on historical patterns.`,
+                success: false,
+                error: `Service Unavailable: ${error.message || "Unknown error"}`,
+                data: "",
                 usage: { inputTokens: 0, outputTokens: 0 },
             };
         }
@@ -133,20 +134,12 @@ export class ExtractorAgent extends BaseAgent {
                 data: result,
                 usage: { inputTokens: 0, outputTokens: 0 },
             };
-        } catch (error: unknown) {
-            console.warn("[ExtractorAgent] Nova Extraction fail, using sandbox entities", error);
+        } catch (error: any) {
+            console.error("[ExtractorAgent] Nova Extraction critical failure:", error.message || error);
             return {
-                success: true,
-                data: {
-                    invoice_number: context.filename.includes("inv") ? "INV-SANDBOX-888" : "INV-MOCK-999",
-                    vendor: { name: "Simulated Global Mfg." },
-                    buyer: { name: "NovaVision Demo Corp" },
-                    total_amount: 1540.50,
-                    currency: "USD",
-                    line_items: [
-                        { description: "Industrial Controller v2", hs_code: "8537.10.91", value: 1200, quantity: 1 }
-                    ]
-                },
+                success: false,
+                error: `Extraction Failed: ${error.message || "Invalid document format or API error"}`,
+                data: null,
                 usage: { inputTokens: 0, outputTokens: 0 }
             };
         }
@@ -195,8 +188,7 @@ INSTRUCTION:
             const shipmentId = context.extractionData.invoice_number;
             const text = response.data as string;
 
-            // Heuristic detection of risk for the demo
-            // In production, Nova would return a structured Risk Score.
+            // Analyze the agent's risk determination
             const isHighRisk = text.toLowerCase().includes("high risk") ||
                 text.toLowerCase().includes("sanction") ||
                 text.toLowerCase().includes("ambiguous") ||
@@ -307,15 +299,16 @@ export class SearchAgent extends BaseAgent {
                     message: `Identified semantically related documents using query: "${queryText}"`
                 }
             };
-        } catch (error: unknown) {
-            console.warn("[SearchAgent] Vector Search fail, using historical fallbacks", error);
+        } catch (error: any) {
+            console.error("[SearchAgent] Vector Search critical failure:", error.message || error);
             return {
-                success: true,
+                success: false,
+                error: `Search Unavailable: ${error.message || "Vector DB connection failure"}`,
                 data: {
-                    embeddingStatus: "simulated",
-                    foundMatches: 1,
-                    topResults: [{ filename: "historical_precedent_66.pdf", score: "0.92", url: "#" }],
-                    message: "Identified relevant historical patterns via local failsafe discovery."
+                    embeddingStatus: "failed",
+                    foundMatches: 0,
+                    topResults: [],
+                    message: "Unable to retrieve historical patterns at this time."
                 }
             };
         }
@@ -359,12 +352,13 @@ export class LearnerAgent extends BaseAgent {
             }
 
             return { success: true, data };
-        } catch (error: unknown) {
-            console.warn("[LearnerAgent] Learning fail, using mock insights", error);
+        } catch (error: any) {
+            console.error("[LearnerAgent] Learning reflection critical failure:", error.message || error);
             return {
-                success: true,
+                success: false,
+                error: `Reflection Failed: ${error.message || "Internal reasoning error"}`,
                 data: {
-                    learnings: [{ topic: "Simulated", insight: "Agentic reflection loop active in fail-safe mode.", confidence: 1.0 }]
+                    learnings: []
                 }
             };
         }

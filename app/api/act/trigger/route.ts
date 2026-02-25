@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
         ], {
             enableReasoning: true,
             reasoningEffort: "low",
-            maxTokens: 1000
+            maxTokens: 1000,
+            model: "act" // Specialized for UI/Workflow
         });
 
         // STEP 3: AGENTIC REFLECTION (Self-Correction Loop)
@@ -94,7 +95,8 @@ export async function POST(request: NextRequest) {
         ], {
             enableReasoning: true,
             reasoningEffort: "medium", // Higher effort for critique
-            maxTokens: 1000
+            maxTokens: 1000,
+            model: "act" // Specialized for UI/Workflow
         });
 
         // Use the reflected (and potentially corrected) response
@@ -172,35 +174,12 @@ export async function POST(request: NextRequest) {
             automationId,
             declaration: filedEntry,
             agent: "Nova Act (Tiered + Reflective)",
-            model: "amazon.nova-pro-v1:0"
+            model: "amazon.nova-act-v1:0"
         });
 
     } catch (error: unknown) {
         console.error("Act API error:", error);
 
-        // GRACEFUL MOCK FALLBACK for Demo Success if Quota is 0
-        const isQuotaError = error instanceof Error && error.message.includes("Operation not allowed");
-        if (isQuotaError) {
-            console.log("Mocking Act response for demo success...");
-            const mockEntryNumber = `MOCK-E-${Math.floor(Math.random() * 900000000) + 100000000}`;
-            const mockAutoId = `auto-${mockEntryNumber}`;
-
-            await automationService.logStep({
-                automationId: mockAutoId,
-                step: "CBP Portal Authentication (Mock)",
-                reasoning: "Bypassing real API for deterministic demo proof.",
-                status: "success"
-            });
-
-            return NextResponse.json({
-                success: true,
-                transactionId: mockEntryNumber,
-                automationId: mockAutoId,
-                declaration: { entryNumber: mockEntryNumber, status: "MOCKED" },
-                agent: "Nova Act (Mocked Fallback)",
-                model: "amazon.nova-pro-v1:0"
-            });
-        }
         return NextResponse.json(
             { error: error instanceof Error ? error.message : "Filing failed" },
             { status: 500 }

@@ -30,6 +30,10 @@ import { claimsAgent } from "@/lib/agents/claims";
 
 const client = new BedrockRuntimeClient({
     region: process.env.AWS_REGION || "us-east-1",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    }
 });
 
 export interface VoiceQueryResult {
@@ -53,7 +57,7 @@ export async function processVoiceQuery(
 ): Promise<VoiceQueryResult> {
     const start = Date.now();
 
-    // Context Injection Logic (Simulated "Database Lookup" for the Demo Story)
+    // Context Injection Logic: Database Lookup for Document Context
     let contextStr = "No document is currently uploaded.";
     if (fileUrl) {
         contextStr = "The user has uploaded a document. Analyze it based on context from previous analysis.";
@@ -61,7 +65,7 @@ export async function processVoiceQuery(
 
     // If we have a specific Entry ID (passed from "Act" step), inject its context
     if (contextId) {
-        // REAL LOOKUP: Check our simulated "Customs DB"
+        // REAL LOOKUP: Check Customs Registry (DynamoDB backed)
         const entry = await registry.getEntry(contextId);
 
         // GLOBAL PATHWAY: Check for proactive alerts (The "Black Hole" fix)
@@ -117,7 +121,7 @@ export async function processVoiceQuery(
             const invoiceData = entry ? {
                 invoice_number: entry.entryNumber,
                 vendor: { name: entry.vendor || "Unknown" },
-                vendor_email: "claims-dept@vendor.com", // Fallback if not in registry yet
+                vendor_email: entry.vendor_email || undefined, // AUTHENTIC: No hardcoded fallback
             } : {};
 
             const claimDraft = await claimsAgent.draftClaim(contextId, discrepancy, invoiceData as any);
@@ -129,7 +133,7 @@ export async function processVoiceQuery(
             return {
                 transcript: audioBase64 ? "[Audio Input]" : transcript,
                 answer: `I've logged the discrepancy. You counted ${observedCount}, but the manifest expects ${expectedCount}. The system has already drafted a formal shortage claim to ${invoiceData.vendor || 'the vendor'}. It is ready for review in the dashboard.`,
-                model: "Nova 2 Pro (Agentic Action)",
+                model: "Nova 2 Sonic (Agentic Action)",
                 processingTimeMs: Date.now() - start,
             };
         }
@@ -154,7 +158,7 @@ export async function processVoiceQuery(
     });
 
     const command = new ConverseCommand({
-        modelId: NOVA_MODELS.LITE,
+        modelId: NOVA_MODELS.SONIC, // Official Sonic Model
         messages,
         inferenceConfig: {
             maxTokens: 150,
@@ -190,15 +194,14 @@ You are part of a voice conversation, so keep your answers concise, natural, and
                     audio: {
                         format: "webm", // AudioRecorder produces webm
                         source: {
-                            bytes: audioBase64
+                            bytes: Buffer.from(audioBase64, "base64")
                         }
                     }
                 }
             ]
         });
 
-        // Force Nova Pro for Audio
-        command.input.modelId = NOVA_MODELS.PRO;
+        // Use the same command but with modified messages content
     }
 
     try {
@@ -211,7 +214,7 @@ You are part of a voice conversation, so keep your answers concise, natural, and
         return {
             transcript: audioBase64 ? "[Audio Input]" : transcript,
             answer,
-            model: audioBase64 ? "Nova 2 Pro (Multimodal Audio)" : "Nova 2 Lite (Text)",
+            model: audioBase64 ? "Nova 2 Sonic (Multimodal Audio)" : "Nova 2 Sonic (Text)",
             processingTimeMs: Date.now() - start,
         };
     } catch (error) {

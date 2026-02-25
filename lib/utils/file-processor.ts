@@ -83,3 +83,14 @@ export function getMimeType(filename: string): string {
     };
     return mimeTypes[ext || ""] || "application/octet-stream";
 }
+
+export function isVideoFile(filename: string): boolean {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    return ["mp4", "webm", "mov", "mkv", "mpg", "mpeg", "3gp", "flv"].includes(ext || "");
+}
+
+export function getVideoFormat(filename: string): any {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    if (ext === "three_gp") return "three_gp";
+    return ext || "mp4";
+}

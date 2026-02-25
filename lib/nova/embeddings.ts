@@ -24,19 +24,18 @@ export class NovaEmbeddings {
         text?: string;
         image?: string; // base64
     }): Promise<number[]> {
-        // MOCK MODE: Bypass AWS Bedrock if env var is set or if previous calls failed
-        if (process.env.MOCK_AI === 'true') {
-            console.log("⚠️  [Mock Mode] Generating fake embedding...");
-            // Return random vector of size 1024 (Titan/Nova standard)
-            return Array.from({ length: 1024 }, () => Math.random());
+        if (!input.text && !input.image) {
+            throw new Error("Either text or image must be provided for embeddings");
         }
 
         try {
-            if (!input.text && !input.image) {
-                throw new Error("Either text or image must be provided for embeddings");
-            }
+            const body: any = {
+                // Required for Nova Multimodal Embeddings
+                embeddingConfig: {
+                    outputEmbeddingLength: 1024, // Optimized for precision vs cost
+                },
+            };
 
-            const body: { inputText?: string; inputImage?: string } = {};
             if (input.text) body.inputText = input.text;
             if (input.image) body.inputImage = input.image;
 
@@ -50,11 +49,10 @@ export class NovaEmbeddings {
             const response = await this.client.send(command);
             const result = JSON.parse(new TextDecoder().decode(response.body));
 
+            // Nova Embeddings returns { embedding: number[] }
             return result.embedding;
-        } catch (error) {
-            console.error("Embedding generation failed:", error);
-            // Auto-fallback to mock if it's the "Operation not allowed" error?
-            // For now, just rethrow so the caller knows, UNLESS we want to force mock.
+        } catch (error: any) {
+            console.error("Embedding generation failed:", error.message || error);
             throw error;
         }
     }

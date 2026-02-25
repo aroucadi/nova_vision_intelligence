@@ -45,7 +45,7 @@ export class NovaClient {
             temperature?: number;
             enableReasoning?: boolean;
             reasoningEffort?: "low" | "medium" | "high";
-            model?: "pro" | "lite";
+            model?: "pro" | "lite" | "act" | "sonic";
         } = {}
     ): Promise<{
         text: string;
@@ -61,7 +61,10 @@ export class NovaClient {
         } = options;
 
         const input: ConverseCommandInput = {
-            modelId: model === "lite" ? NOVA_MODELS.LITE : NOVA_MODELS.PRO,
+            modelId: model === "lite" ? NOVA_MODELS.LITE :
+                model === "act" ? NOVA_MODELS.ACT :
+                    model === "sonic" ? NOVA_MODELS.SONIC :
+                        NOVA_MODELS.PRO,
             messages,
             inferenceConfig: {
                 maxTokens,
@@ -168,6 +171,40 @@ export class NovaClient {
         return this.converse(messages, {
             maxTokens: 4096,
             enableReasoning: options.enableReasoning,
+        });
+    }
+
+    /**
+     * Analyze video with Nova 2 Lite/Pro (multimodal understanding)
+     * Supports MP4, WebM, etc.
+     */
+    async analyzeVideo(
+        videoBase64: string,
+        prompt: string,
+        format: "mp4" | "webm" | "mov" | "mkv" | "mpg" = "mp4",
+        options: { enableReasoning?: boolean; model?: "pro" | "lite" } = {}
+    ): Promise<{ text: string; usage: { inputTokens: number; outputTokens: number } }> {
+        const videoBytes = Buffer.from(videoBase64, "base64");
+
+        const messages: Message[] = [
+            {
+                role: "user",
+                content: [
+                    {
+                        video: {
+                            format,
+                            source: { bytes: videoBytes },
+                        },
+                    } as ContentBlock,
+                    { text: prompt } as ContentBlock,
+                ],
+            },
+        ];
+
+        return this.converse(messages, {
+            maxTokens: 4096,
+            enableReasoning: options.enableReasoning,
+            model: options.model || "pro", // Default to Pro for video for better temporal reasoning
         });
     }
 

@@ -62,26 +62,13 @@ interface GlobalPathwayContextType {
 
 // Initial/Seed Data (So it looks alive initially)
 const INITIAL_METRICS: Metrics = {
-    processedDocs: 128,
-    filings: 43,
-    flagged: 12,
-    voiceOps: 85,
+    processedDocs: 0,
+    filings: 0,
+    flagged: 0,
+    voiceOps: 0,
 };
 
-const INITIAL_LOGS: ActivityLog[] = [
-    {
-        id: "1", time: "2m ago", agent: "Nova Pro", action: "Classified 'Cotton Knit Shirt' as HS 6109.10", status: "Success",
-        reasoning: "Analyzed material composition (95% cotton, 5% elastane) and garment type (knitted t-shirt). Cross-referenced with Section XI, Chapter 61 of the Harmonized System. Determined 6109.10 is the most specific heading for cotton t-shirts."
-    },
-    {
-        id: "2", time: "5m ago", agent: "Nova Vision", action: "Extracted 12 line items from Invoice #INV-2024-001", status: "Success",
-        reasoning: "Multimodal scan identified table structure on page 1. OCR extracted unit prices, quantities, and SKU descriptions. Validated totals against invoice footer to ensure 100% data integrity."
-    },
-    {
-        id: "3", time: "12m ago", agent: "Nova Sonic", action: "Answered warehouse query regarding PO #455", status: "Success",
-        reasoning: "Audio query 'Where is PO 455?' mapped to semantic search in Warehouse Inventory. Found PO 455 at Bay C-4. Response generated via low-latency voice synthesis."
-    },
-];
+const INITIAL_LOGS: ActivityLog[] = [];
 
 const GlobalPathwayContext = createContext<GlobalPathwayContextType | undefined>(undefined);
 
@@ -90,17 +77,7 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
     const [activityLog, setActivityLog] = useState<ActivityLog[]>(INITIAL_LOGS);
     const [activeEntries, setActiveEntries] = useState<CustomsEntry[]>([]);
     const [claims, setClaims] = useState<Claim[]>([]);
-    const [intelligencePulse, setIntelligencePulse] = useState<PulseItem[]>([
-        {
-            id: "initial",
-            headline: "Logistics Sentinel Active",
-            pulse: "Connecting to live global trade feeds. Scalling maritime news for operational risks...",
-            risk: "LOW",
-            recommendation: "Standby for real-time intelligence injection.",
-            timestamp: "Just Now",
-            source: "LogisticsOS Internal"
-        }
-    ]);
+    const [intelligencePulse, setIntelligencePulse] = useState<PulseItem[]>([]);
 
     const addFiling = (entryId: string, description: string) => {
         // 1. Update Metrics
@@ -158,8 +135,7 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
     };
 
     const sendClaim = async (claimId: string) => {
-        // Simulated network delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Real-time update (Removal of simulated network delay)
 
         setClaims(prev => prev.map(c => c.id === claimId ? { ...c, status: "SENT" } : c));
 
@@ -170,7 +146,7 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
             agent: "Nova Act",
             action: `Sent Official Claim to vendor`,
             status: "Success",
-            reasoning: "Detected discrepancy in warehouse verification. Drafted formal shortage claim using vendor-specific templates and triggered SES transmission to vendor point-of-contact."
+            reasoning: "Detected discrepancy in warehouse verification. Drafted formal shortage claim and triggered SES transmission to vendor point-of-contact."
         };
         setActivityLog(prev => [log, ...prev].slice(0, 15));
     };

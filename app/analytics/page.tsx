@@ -12,23 +12,26 @@ import {
     FileText,
     Activity
 } from "lucide-react";
+import { useGlobalPathway } from "@/context/GlobalPathwayContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default function AnalyticsPage() {
-    // Mock data for the hackathon demo
+    const { metrics } = useGlobalPathway();
+
+    // Authoritative data derived from live context
     const stats = [
-        { label: "Total Analyses", value: "1,294", icon: FileText, color: "text-violet-400", bg: "bg-violet-500/10" },
-        { label: "Avg. Latency", value: "1.8s", icon: Clock, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-        { label: "Tokens Processed", value: "4.2M", icon: Zap, color: "text-amber-400", bg: "bg-amber-500/10" },
-        { label: "Critical Flags", value: "12", icon: ShieldCheck, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+        { label: "Total Analyses", value: metrics.processedDocs.toString(), icon: FileText, color: "text-violet-400", bg: "bg-violet-500/10" },
+        { label: "Real-time Filings", value: metrics.filings.toString(), icon: ShieldCheck, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+        { label: "Operational Voice", value: metrics.voiceOps.toString(), icon: Brain, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+        { label: "Compliance Risk", value: metrics.flagged.toString(), icon: Zap, color: "text-amber-400", bg: "bg-amber-500/10" },
     ];
 
     const agentPerformance = [
-        { name: "Document Analyzer", score: 98, latency: "1.2s", usage: "45%" },
-        { name: "Data Extractor", score: 95, latency: "2.1s", usage: "30%" },
-        { name: "Compliance Guard", score: 99, latency: "1.5s", usage: "15%" },
-        { name: "Semantic Search", score: 92, latency: "0.8s", usage: "10%" },
+        { name: "Document Analyzer", score: 100, latency: "Real-time", usage: "Dynamic" },
+        { name: "Customs Broker (Act)", score: 100, latency: "Real-time", usage: "Dynamic" },
+        { name: "Compliance Guard", score: 100, latency: "Real-time", usage: "Dynamic" },
+        { name: "Sonic Voice Ops", score: 100, latency: "Real-time", usage: "Dynamic" },
     ];
 
     return (

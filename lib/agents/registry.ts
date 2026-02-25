@@ -21,22 +21,9 @@ class FilingRegistry {
         // Persist to DynamoDB
         await customsService.fileEntry(entry);
 
-        // Simulate "Processing" logic (e.g. risk assessment delay)
-        // In a real system, this would happen via a background Lambda stream event.
-        // For the demo, we'll optimistically schedule a release if it's a valid entry.
-
-        // We do NOT simulate the timeout here anymore for the status update,
-        // because we want the Admin Dashboard's "Time Travel" feature to handle approvals.
-        // OR we can keep it for the "Happy Path" demo.
-        // Let's keep it for the "Happy Path" but make it checkable.
-
-        setTimeout(async () => {
-            // Re-fetch to ensure we don't overwrite manual changes
-            const current = await customsService.getEntry(entry.entryNumber);
-            if (current && current.status === "FILED") {
-                await customsService.updateStatus(entry.entryNumber, "RELEASED");
-            }
-        }, 5000); // 5 seconds processing time
+        // Status updates must be driven by real operational actions or 
+        // administrative tools (e.g. the "Time Travel" admin dashboard).
+        // No automatic status-flipping in production-grade code.
 
         return entry;
     }

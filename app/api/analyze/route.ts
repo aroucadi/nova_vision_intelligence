@@ -6,14 +6,17 @@ import {
     getDocFormat,
     isImageFile,
     isDocumentFile,
+    isVideoFile,
+    getVideoFormat,
     bufferToBase64,
 } from "@/lib/utils/file-processor";
+import { videoAuditService } from "@/lib/nova/video-audit";
 
 import { z } from "zod";
 
 const analyzeSchema = z.object({
     fileUrl: z.string().url(),
-    analysisType: z.enum(["summary", "compliance", "classification", "extraction", "custom"]),
+    analysisType: z.enum(["summary", "compliance", "classification", "extraction", "custom", "video"]),
 });
 
 import { rateLimiter } from "@/lib/rate-limit";
@@ -38,6 +41,21 @@ export async function POST(request: NextRequest) {
         }
 
         const { fileUrl, analysisType } = validation.data;
+
+        // SSRF PROTECTION: Restrict to authorized S3/Amplify/AWS domains
+        const url = new URL(fileUrl);
+        const allowedHosts = [
+            "s3.amazonaws.com",
+            "amplifyapp.com",
+            "localhost",
+            "127.0.0.1"
+        ];
+        const isAuthorized = allowedHosts.some(host => url.host.endsWith(host));
+
+        if (!isAuthorized) {
+            console.warn(`[SSRF] Unauthorized host blocked: ${url.host}`);
+            return NextResponse.json({ error: "Access denied: Unauthorized file source" }, { status: 403 });
+        }
 
         const startTime = Date.now();
 
@@ -141,6 +159,14 @@ export async function POST(request: NextRequest) {
                 typeof prompt === "string" ? prompt : PROMPTS.summary,
                 { enableReasoning: analysisType === "summary" || analysisType === "compliance" }
             );
+        } else if (isVideoFile(filename) || contentType.startsWith("video/") || analysisType === "video") {
+            const format = getVideoFormat(filename);
+            const auditResult = await videoAuditService.performAudit(base64, filename, format);
+
+            result = {
+                text: auditResult.findings,
+                usage: { inputTokens: 0, outputTokens: 0 } // Video audit wraps usage internally
+            };
         } else {
             return NextResponse.json(
                 { error: "Unsupported file type for analysis" },

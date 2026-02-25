@@ -19,6 +19,21 @@ export async function POST(request: NextRequest) {
 
         const startTime = Date.now();
 
+        // SSRF PROTECTION: Restrict to authorized S3/Amplify/AWS domains
+        const url = new URL(fileUrl);
+        const allowedHosts = [
+            "s3.amazonaws.com",
+            "amplifyapp.com",
+            "localhost",
+            "127.0.0.1"
+        ];
+        const isAuthorized = allowedHosts.some(host => url.host.endsWith(host));
+
+        if (!isAuthorized) {
+            console.warn(`[SSRF] Unauthorized host blocked: ${url.host}`);
+            return NextResponse.json({ error: "Access denied: Unauthorized file source" }, { status: 403 });
+        }
+
         // Fetch file
         const fileResponse = await fetch(fileUrl);
         if (!fileResponse.ok) {

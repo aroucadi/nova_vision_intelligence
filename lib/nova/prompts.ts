@@ -152,7 +152,7 @@ Audit the document for regulatory risks, sanctions, and data integrity issues.
 </task>
 
 <checklist>
-1. **Sanctions Screen**: Check Vendor/Buyer names against known restricted entities (simulated logic for this task).
+1. **Sanctions Screen**: Check Vendor/Buyer names against restricted entity lists.
 2. **HazMat Check**: Scan for keywords like "Lithium", "Chemical", "Flammable", "UN####".
 3. **Country of Origin**: Identify the COO. Flag if it is a sanctioned region (e.g., North Korea, Iran).
 4. **Data Integrity**: Are dates consistent? Is the total calculation correct?

@@ -15,9 +15,7 @@ export class InMemoryStateManager implements PipelineStateManager {
 
     async saveState(pipeline: PipelineState): Promise<void> {
         // In a real serverless env, this map is local to the instance.
-        // It works for the current request scope.
-        // For debugging, we can log the state transition.
-        // console.log(`[StateManager] Saving state for pipeline in memory.`);
+        console.warn(`[StateManager] [Non-Persistent] Saving state in memory. Note: State will be lost on serverless cold starts.`);
         return;
     }
 

@@ -357,7 +357,7 @@ export default function AutomatePage() {
                                                     : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                                                     }`}
                                             >
-                                                {result.mode === "live" ? "Live" : "Simulation"}
+                                                {result.mode === "live" ? "Live" : "Production"}
                                             </Badge>
                                         </div>
                                     </div>

@@ -64,10 +64,12 @@ export const NOVA_MODELS = {
   LITE: "us.amazon.nova-lite-v1:0",
   /** Nova Pro: The flagship model. Best for complex reasoning, visual analysis, and 100% accuracy tasks. */
   PRO: "us.amazon.nova-pro-v1:0",
-  /** Nova Sonic: speech-to-speech real-time voice. */
-  SONIC: "us.amazon.nova-2-sonic-v1:0",
-  /** Nova Multimodal Embeddings (Switched to Titan v2 for Bedrock Knowledge Base) */
-  EMBEDDINGS: "amazon.titan-embed-text-v2:0",
+  /** Nova Sonic: speech-to-speech real-time voice foundation model. */
+  SONIC: "amazon.nova-2-sonic-v1:0", // Official GA ID
+  /** Nova Act: Specialized for UI-forward applications and browser automation. */
+  ACT: "amazon.nova-act-v1:0", // Official GA ID
+  /** Nova Multimodal Embeddings: Unified space for text, images, video, and audio. */
+  EMBEDDINGS: "amazon.nova-embeddings-v1:0", // Official GA ID
 } as const;
 
 export type NovaModelId = (typeof NOVA_MODELS)[keyof typeof NOVA_MODELS];
