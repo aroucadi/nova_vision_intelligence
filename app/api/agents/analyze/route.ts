@@ -2,35 +2,44 @@ import { NextRequest, NextResponse } from "next/server";
 import { agentCoordinator } from "@/lib/agents/coordinator";
 import { bufferToBase64, getImageFormat, getDocFormat, isImageFile, isDocumentFile } from "@/lib/utils/file-processor";
 import { type FileFormat } from "@/lib/nova/types";
+import { guardApiRequest } from "@/lib/security/api-guard";
+import { fetchArrayBufferWithLimits } from "@/lib/security/safe-fetch";
+import { rateLimiter } from "@/lib/rate-limit";
+import { getRateLimitKey } from "@/lib/security/rate-limit-key";
+import { createApiLog } from "@/lib/observability/api-log";
 
 export async function POST(request: NextRequest) {
+    let apiLog: ReturnType<typeof createApiLog> | null = null;
     try {
+        const guard = guardApiRequest(request);
+        if (!guard.ok) return guard.response;
+        apiLog = createApiLog(request, "/api/agents/analyze", guard.principal);
+
+        const isAllowed = await rateLimiter.check(5, getRateLimitKey(request));
+        if (!isAllowed) {
+            apiLog.end(429);
+            return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        }
+
         const { fileUrl } = await request.json();
 
         if (!fileUrl) {
+            apiLog.end(400);
             return NextResponse.json({ error: "Missing fileUrl" }, { status: 400 });
         }
 
-        // SSRF Prevention: Validate URL host
-        const allowedHost = `${process.env.NEXT_PUBLIC_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com`;
-        const urlObj = new URL(fileUrl);
-        if (urlObj.hostname !== allowedHost && !urlObj.hostname.endsWith(".amazonaws.com") && !fileUrl.startsWith("http://localhost")) {
-            // Allowing localhost for dev/testing if needed, but optimally restrict to S3
-            // For strict production, we only allow our S3 bucket
-            if (process.env.NODE_ENV === "production") {
-                return NextResponse.json({ error: "Invalid file source. Must be from authorized storage." }, { status: 403 });
-            }
+        const fetchRes = await fetchArrayBufferWithLimits(fileUrl, {
+            maxBytes: 15 * 1024 * 1024,
+            timeoutMs: 15000
+        });
+        if (!fetchRes.ok) {
+            apiLog.end(fetchRes.response.status);
+            return fetchRes.response;
         }
 
-        // Fetch file
-        const fileResponse = await fetch(fileUrl);
-        if (!fileResponse.ok) {
-            throw new Error(`Failed to fetch file: ${fileResponse.statusText}`);
-        }
-
-        const fileBuffer = await fileResponse.arrayBuffer();
+        const fileBuffer = fetchRes.bytes;
         const base64 = bufferToBase64(fileBuffer);
-        const contentType = fileResponse.headers.get("content-type") || "";
+        const contentType = fetchRes.contentType || "";
         const urlPath = new URL(fileUrl).pathname;
         const filename = urlPath.split("/").pop() || "file";
 
@@ -48,6 +57,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (!format) {
+            apiLog.end(400);
             return NextResponse.json({ error: "Unsupported file format for multi-agent analysis" }, { status: 400 });
         }
 
@@ -56,14 +66,17 @@ export async function POST(request: NextRequest) {
             base64,
             format: format!,
             filename,
+            requestId: apiLog.requestId,
         });
 
+        apiLog.end(200);
         return NextResponse.json({
             success: true,
             pipeline: pipelineState,
         });
     } catch (error: unknown) {
         console.error("Multi-agent pipeline error:", error);
+        apiLog?.end(500);
         return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }

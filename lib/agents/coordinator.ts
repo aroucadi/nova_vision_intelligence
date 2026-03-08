@@ -10,10 +10,12 @@ import {
     ExtractorAgent,
     ComplianceAgent,
     SearchAgent,
+    LearnerAgent,
     type ExtractionData,
 } from "./specialists";
 
-import { InMemoryStateManager, PipelineStateManager, DynamoDBStateManager } from "./state-manager";
+import { type PipelineStateManager } from "./state-manager";
+import { getPipelineStateManager } from "./state";
 import { pathwayContext } from "@/lib/context/global-pathway";
 
 export class AgentCoordinator {
@@ -28,12 +30,8 @@ export class AgentCoordinator {
     constructor(stateManager?: PipelineStateManager) {
         if (stateManager) {
             this.stateManager = stateManager;
-        } else if (process.env.NOVA_GLOBAL_STATE_TABLE) {
-            console.log("[Coordinator] Initializing with DynamoDBStateManager (Global State)");
-            this.stateManager = new DynamoDBStateManager(process.env.NOVA_GLOBAL_STATE_TABLE);
         } else {
-            console.log("[Coordinator] Initializing with InMemoryStateManager (Local)");
-            this.stateManager = new InMemoryStateManager();
+            this.stateManager = getPipelineStateManager();
         }
     }
 
@@ -49,8 +47,10 @@ export class AgentCoordinator {
         base64: string;
         format: FileFormat;
         filename: string;
+        requestId?: string;
     }): Promise<PipelineState> {
         const startTime = new Date().toISOString();
+        const pipelineId = nanoid();
 
         // Initialize tasks (Optimistic UI state)
         const tasks: AgentTask[] = [
@@ -86,14 +86,23 @@ export class AgentCoordinator {
         ];
 
         const pipeline: PipelineState = {
+            pipelineId,
+            requestId: context.requestId,
             tasks,
             overallStatus: "running",
             startTime,
+            events: [{ ts: new Date().toISOString(), agentId: AGENT_IDS.COORDINATOR, type: "pipeline_update", message: "Pipeline started" }],
         };
 
         // Helper to update a task in the pipeline and persist state
         const updateTask = async (index: number, updates: Partial<AgentTask>) => {
             pipeline.tasks[index] = { ...pipeline.tasks[index], ...updates };
+            pipeline.events?.push({
+                ts: new Date().toISOString(),
+                agentId: pipeline.tasks[index].agentId,
+                type: "task_update",
+                message: `Task ${pipeline.tasks[index].status}`,
+            });
             await this.stateManager.saveState(pipeline);
         };
 
@@ -174,13 +183,24 @@ export class AgentCoordinator {
             const finalStatus = pipeline.tasks.every(t => t.status === "completed") ? "completed" : "failed";
             pipeline.overallStatus = finalStatus;
             pipeline.endTime = new Date().toISOString();
+            pipeline.events?.push({
+                ts: new Date().toISOString(),
+                agentId: AGENT_IDS.COORDINATOR,
+                type: "pipeline_update",
+                message: `Pipeline ${finalStatus}`,
+            });
 
             if (finalStatus === "completed") {
                 console.log(`[Pipeline] Starting Learning Phase (Reflection)...`);
-                const learner = new (require("./specialists").LearnerAgent)();
-                const learningRes = await learner.run({ ...context, pipeline });
+                const learningRes = await new LearnerAgent().run({ ...context, pipeline });
                 if (learningRes.success) {
-                    console.log(`[Pipeline] Learned ${learningRes.data?.learnings?.length || 0} items from this session.`);
+                    const learningsCount =
+                        learningRes.data &&
+                            typeof learningRes.data === "object" &&
+                            "learnings" in learningRes.data
+                            ? ((learningRes.data as any).learnings?.length || 0)
+                            : 0;
+                    console.log(`[Pipeline] Learned ${learningsCount} items from this session.`);
                 }
             }
 
@@ -190,6 +210,12 @@ export class AgentCoordinator {
             console.error("Pipeline Orchestration Error:", error);
             pipeline.overallStatus = "failed";
             pipeline.endTime = new Date().toISOString();
+            pipeline.events?.push({
+                ts: new Date().toISOString(),
+                agentId: AGENT_IDS.COORDINATOR,
+                type: "pipeline_update",
+                message: "Pipeline crashed",
+            });
             // Fail any running tasks
             pipeline.tasks.forEach(task => {
                 if (task.status === "running") {

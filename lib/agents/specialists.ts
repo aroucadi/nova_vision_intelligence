@@ -3,6 +3,8 @@ import { PROMPTS } from "../nova/prompts";
 import { type AgentResponse } from "./types";
 import { type ImageFormat, type FileFormat, type DocumentFormat } from "../nova/types";
 import { novaEmbeddings } from "../nova/embeddings";
+import { extractionDataSchema } from "./contracts";
+import { getRetriever } from "@/lib/retrieval";
 
 import { learningService } from "../services/learning-service";
 
@@ -129,9 +131,19 @@ export class ExtractorAgent extends BaseAgent {
                 }
             }
 
+            const parsed = extractionDataSchema.safeParse(result);
+            if (!parsed.success) {
+                return {
+                    success: false,
+                    error: "Extraction output validation failed",
+                    data: null,
+                    usage: { inputTokens: 0, outputTokens: 0 },
+                };
+            }
+
             return {
                 success: true,
-                data: result,
+                data: parsed.data,
                 usage: { inputTokens: 0, outputTokens: 0 },
             };
         } catch (error: any) {
@@ -161,7 +173,7 @@ export class ComplianceAgent extends BaseAgent {
             // RAG LOOKUP: Check for historical risks related to the vendor/item
             const vendor = context.extractionData.vendor?.name || "";
             const items = context.extractionData.line_items?.map(i => i.description).join(", ") || "";
-            const history = await vectorStore.search(`compliance risk for ${vendor} related to ${items}`, 1);
+            const history = await getRetriever().search(`compliance risk for ${vendor} related to ${items}`, 1);
 
             prompt += `\n\n<context_injection>
 AUDIT TARGETS (Extracted Data):
@@ -205,8 +217,6 @@ INSTRUCTION:
         return response;
     }
 }
-
-import { vectorStore } from "../nova/vector-store";
 
 // Shared Interface for Extracted Data
 export interface ExtractionData {
@@ -271,7 +281,7 @@ export class SearchAgent extends BaseAgent {
             }
 
             // 2. Perform Vector Search
-            const results = await vectorStore.search(queryText, 3);
+            const results = await getRetriever().search(queryText, 3);
 
             if (results.length === 0) {
                 return {

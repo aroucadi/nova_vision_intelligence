@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { vectorStore } from "@/lib/vector-store";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { guardApiRequest } from "@/lib/security/api-guard";
+import { rateLimiter } from "@/lib/rate-limit";
+import { getRateLimitKey } from "@/lib/security/rate-limit-key";
+import { createApiLog } from "@/lib/observability/api-log";
 
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -20,23 +25,32 @@ const ALLOWED_TYPES = [
 
 const s3Client = new S3Client({
     region: process.env.AWS_REGION || "us-east-1",
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
 });
 
 
 export async function POST(request: NextRequest) {
+    let apiLog: ReturnType<typeof createApiLog> | null = null;
     try {
+        const guard = guardApiRequest(request);
+        if (!guard.ok) return guard.response;
+        apiLog = createApiLog(request, "/api/upload", guard.principal);
+
+        const isAllowed = await rateLimiter.check(10, getRateLimitKey(request));
+        if (!isAllowed) {
+            apiLog.end(429);
+            return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+        }
+
         const formData = await request.formData();
         const file = formData.get("file") as File;
 
         if (!file) {
+            apiLog.end(400);
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
         if (file.size > MAX_FILE_SIZE) {
+            apiLog.end(400);
             return NextResponse.json(
                 { error: "File too large (max 10MB)" },
                 { status: 400 }
@@ -44,6 +58,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (!ALLOWED_TYPES.includes(file.type)) {
+            apiLog.end(400);
             return NextResponse.json(
                 { error: `Unsupported file type: ${file.type}` },
                 { status: 400 }
@@ -53,6 +68,7 @@ export async function POST(request: NextRequest) {
         const bucketName = process.env.NEXT_PUBLIC_S3_BUCKET_NAME;
         if (!bucketName) {
             console.error("Missing NEXT_PUBLIC_S3_BUCKET_NAME env var");
+            apiLog?.end(500);
             return NextResponse.json({ error: "Server misconfiguration: No Storage Bucket" }, { status: 500 });
         }
 
@@ -65,16 +81,19 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(bytes);
 
         // Upload to S3
+        const objectKey = `uploads/${filename}`;
         await s3Client.send(new PutObjectCommand({
             Bucket: bucketName,
-            Key: `uploads/${filename}`,
+            Key: objectKey,
             Body: buffer,
             ContentType: file.type,
         }));
 
-        // Construct S3 URL (Public or Presigned - assuming public read for demo simplicity or proxy access)
-        // For strict security, we'd use GetObjectCommand with getSignedUrl
-        const fileUrl = `https://${bucketName}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/uploads/${filename}`;
+        const fileUrl = await getSignedUrl(
+            s3Client,
+            new GetObjectCommand({ Bucket: bucketName, Key: objectKey }),
+            { expiresIn: 60 * 60 }
+        );
 
         // Indexing Logic (Simple RAG)
         try {
@@ -104,6 +123,7 @@ export async function POST(request: NextRequest) {
             // Don't fail the upload just because indexing failed
         }
 
+        apiLog?.end(200, { fileType: file.type, fileSize: file.size });
         return NextResponse.json({
             success: true,
             file: {
@@ -119,6 +139,7 @@ export async function POST(request: NextRequest) {
         console.error("Upload error:", error);
         const message =
             error instanceof Error ? error.message : "Upload failed";
+        apiLog?.end(500);
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

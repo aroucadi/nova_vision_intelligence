@@ -27,6 +27,8 @@ export function FileUploader({ onFileUploaded }: FileUploaderProps) {
         null
     );
     const [error, setError] = useState<string | null>(null);
+    const demoSampleUrl = process.env.NEXT_PUBLIC_SAMPLE_INVOICE_URL;
+    const showDemoHelper = process.env.NEXT_PUBLIC_APP_MODE === "demo" && !!demoSampleUrl;
 
     const onDrop = useCallback(
         async (acceptedFiles: File[]) => {
@@ -182,30 +184,30 @@ export function FileUploader({ onFileUploaded }: FileUploaderProps) {
                     )}
                 </div>
 
-                {/* Demo Helper - Quick Action */}
-                <div className="absolute bottom-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // Simulate upload
-                            const sampleFile: UploadedFileData = {
-                                id: "demo-invoice-001",
-                                filename: "commercial_invoice_scan.pdf",
-                                mimeType: "application/pdf",
-                                size: 1024 * 450, // 450KB
-                                url: "https://nova-hackathon-assets.s3.amazonaws.com/demo/invoice.pdf", // Mock URL
-                                uploadedAt: new Date().toISOString()
-                            };
-                            setUploadedFile(sampleFile);
-                            onFileUploaded(sampleFile);
-                        }}
-                    >
-                        Try Sample Invoice
-                    </Button>
-                </div>
+                {showDemoHelper && (
+                    <div className="absolute bottom-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const sampleFile: UploadedFileData = {
+                                    id: "demo-invoice-001",
+                                    filename: "commercial_invoice_scan.pdf",
+                                    mimeType: "application/pdf",
+                                    size: 1024 * 450,
+                                    url: demoSampleUrl!,
+                                    uploadedAt: new Date().toISOString()
+                                };
+                                setUploadedFile(sampleFile);
+                                onFileUploaded(sampleFile);
+                            }}
+                        >
+                            Try Sample Invoice
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <AnimatePresence>

@@ -1,22 +1,55 @@
 import { NextRequest, NextResponse } from "next/server";
 import { novaClient } from "@/lib/nova/client";
+import { guardApiRequest } from "@/lib/security/api-guard";
+import { createApiLog } from "@/lib/observability/api-log";
 
 import { z } from "zod";
 
-const actSchema = z.object({
-    shipmentData: z.record(z.string(), z.any()), // Explicit string keys
+const shipmentDataSchema = z.record(z.string().max(200), z.unknown()).superRefine((value, ctx) => {
+    const keys = Object.keys(value);
+    if (keys.length > 500) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "shipmentData has too many keys" });
+    }
+    const size = JSON.stringify(value).length;
+    if (size > 250_000) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "shipmentData is too large" });
+    }
 });
+
+const actSchema = z.object({
+    shipmentData: shipmentDataSchema,
+});
+
+const declarationSchema = z.object({
+    entryNumber: z.string().optional(),
+    filerCode: z.string().optional(),
+    importer: z.string().optional(),
+    portCode: z.string().optional(),
+    lineItems: z.array(z.object({
+        description: z.string().optional(),
+        hsCode: z.string().optional(),
+        quantity: z.number().optional(),
+        value: z.number().optional(),
+    }).passthrough()).optional(),
+    totalDuty: z.number().optional(),
+}).passthrough();
 
 import { rateLimiter } from "@/lib/rate-limit";
 import { registry } from "@/lib/agents/registry";
 import { automationService } from "@/lib/services/automation-service";
+import { getRateLimitKey } from "@/lib/security/rate-limit-key";
 
 // ...
 export async function POST(request: NextRequest) {
+    let apiLog: ReturnType<typeof createApiLog> | null = null;
     try {
-        const ip = request.headers.get("x-forwarded-for") || "unknown";
-        const isAllowed = await rateLimiter.check(5, ip); // 5 acts per minute
+        const guard = guardApiRequest(request);
+        if (!guard.ok) return guard.response;
+        apiLog = createApiLog(request, "/api/act/trigger", guard.principal);
+
+        const isAllowed = await rateLimiter.check(5, getRateLimitKey(request)); // 5 acts per minute
         if (!isAllowed) {
+            apiLog.end(429);
             return NextResponse.json({ error: "Too many requests" }, { status: 429 });
         }
 
@@ -24,6 +57,7 @@ export async function POST(request: NextRequest) {
         const validation = actSchema.safeParse(body);
 
         if (!validation.success) {
+            apiLog.end(400);
             return NextResponse.json({ error: "Invalid input", details: validation.error.format() }, { status: 400 });
         }
 
@@ -114,14 +148,23 @@ export async function POST(request: NextRequest) {
 
         // Extract JSON from response
         const jsonMatch = finalResponseText.match(/\{[\s\S]*\}/);
-        const declaration = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+        let declaration: unknown = null;
+        if (jsonMatch?.[0]) {
+            try {
+                declaration = JSON.parse(jsonMatch[0]);
+            } catch {
+                declaration = null;
+            }
+        }
 
-        if (!declaration) {
+        const parsedDeclaration = declarationSchema.safeParse(declaration);
+        if (!parsedDeclaration.success) {
             throw new Error("Failed to generate valid customs declaration after reflection");
         }
 
         // REAL ACTION: File to the Registry (Simulating CBP System persistence)
-        const entryNumber = declaration.entryNumber || `E-${Math.floor(Math.random() * 1000000)}`;
+        const declared = parsedDeclaration.data;
+        const entryNumber = declared.entryNumber || `E-${Math.floor(Math.random() * 1000000)}`;
         const automationId = `auto-${entryNumber}`;
 
         // Step 1: Portal Login
@@ -136,7 +179,7 @@ export async function POST(request: NextRequest) {
         await automationService.logStep({
             automationId,
             step: "Form Selection (Entry Type 01)",
-            reasoning: `Identifying standard consumption entry for ${declaration.importer || "importer"}.`,
+            reasoning: `Identifying standard consumption entry for ${declared.importer || "importer"}.`,
             status: "success"
         });
 
@@ -144,17 +187,24 @@ export async function POST(request: NextRequest) {
         await automationService.logStep({
             automationId,
             step: "Field Mapping",
-            reasoning: `Mapping ${declaration.lineItems?.length || 0} line items. Calculating duty for HS Codes: ${declaration.lineItems?.map((i: any) => i.hsCode).join(", ")}.`,
+            reasoning: `Mapping ${declared.lineItems?.length || 0} line items. Calculating duty for HS Codes: ${declared.lineItems?.map((i: any) => i.hsCode).join(", ")}.`,
             status: "success"
         });
 
+        const normalizedItems = (declared.lineItems || []).map((item) => ({
+            description: item.description || "Item",
+            hsCode: item.hsCode || "0000.00.0000",
+            quantity: typeof item.quantity === "number" ? item.quantity : 1,
+            value: typeof item.value === "number" ? item.value : 0,
+        }));
+
         const filedEntry = await registry.fileEntry({
             entryNumber,
-            filerCode: declaration.filerCode || "999",
-            importer: declaration.importer || "Unknown Importer",
-            portOfEntry: declaration.portCode || "4601",
-            items: declaration.lineItems || [],
-            totalDuty: declaration.totalDuty || 0,
+            filerCode: declared.filerCode || "999",
+            importer: declared.importer || "Unknown Importer",
+            portOfEntry: declared.portCode || "4601",
+            items: normalizedItems,
+            totalDuty: declared.totalDuty || 0,
             documents: ["invoice.pdf"] // placeholder for now
         });
 
@@ -168,6 +218,7 @@ export async function POST(request: NextRequest) {
 
         const transactionId = filedEntry.entryNumber;
 
+        apiLog?.end(200);
         return NextResponse.json({
             success: true,
             transactionId,
@@ -180,6 +231,7 @@ export async function POST(request: NextRequest) {
     } catch (error: unknown) {
         console.error("Act API error:", error);
 
+        apiLog?.end(500);
         return NextResponse.json(
             { error: error instanceof Error ? error.message : "Filing failed" },
             { status: 500 }

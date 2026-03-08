@@ -13,10 +13,18 @@ export interface AgentTask {
 }
 
 export interface PipelineState {
+    pipelineId: string;
+    requestId?: string;
     tasks: AgentTask[];
     overallStatus: AgentStatus;
     startTime?: string;
     endTime?: string;
+    events?: Array<{
+        ts: string;
+        agentId: string;
+        type: "task_update" | "pipeline_update";
+        message: string;
+    }>;
 }
 
 export interface AgentResponse {

@@ -16,7 +16,7 @@ export class InMemoryStateManager implements PipelineStateManager {
     async saveState(pipeline: PipelineState): Promise<void> {
         // In a real serverless env, this map is local to the instance.
         console.warn(`[StateManager] [Non-Persistent] Saving state in memory. Note: State will be lost on serverless cold starts.`);
-        return;
+        this.state.set(pipeline.pipelineId, pipeline);
     }
 
     async getState(id: string): Promise<PipelineState | null> {
@@ -42,9 +42,7 @@ export class DynamoDBStateManager implements PipelineStateManager {
     }
 
     async saveState(pipeline: PipelineState): Promise<void> {
-        // Use the first task ID as a proxy for the pipeline ID if no explicit ID exists
-        // In a real app, we'd pass a dedicated pipeline ID.
-        const pipelineId = pipeline.tasks.length > 0 ? pipeline.tasks[0].id : "unknown";
+        const pipelineId = pipeline.pipelineId;
 
         try {
             const command = new PutCommand({

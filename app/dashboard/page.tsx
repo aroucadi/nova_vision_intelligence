@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { SPRING_PHYSICS, STAGGER_CONTAINER, FADE_UP_ITEM, SCALE_UP_ITEM } from "@/components/motion/constants";
 
 export default function DashboardPage() {
-  const { metrics, activityLog, intelligencePulse, refreshPulse } = useGlobalPathway();
+  const { metrics, activityLog, intelligencePulse, refreshPulse, refreshRegistry } = useGlobalPathway();
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white selection:bg-violet-500/30">
@@ -51,6 +51,12 @@ export default function DashboardPage() {
             >
               <Activity className="h-4 w-4 animate-pulse" /> Network Health: Optimal
             </motion.div>
+            <button
+              onClick={() => { refreshRegistry(); refreshPulse(); }}
+              className="px-4 py-2 rounded-full bg-zinc-900/60 text-zinc-300 text-sm font-medium border border-zinc-800 hover:bg-zinc-900 hover:text-white transition-colors"
+            >
+              Refresh Signals
+            </button>
             <div className="text-sm text-zinc-500 text-right">
               <span className="block font-medium text-zinc-300">Global Trade Lifecycle Agent</span>
               <span>Active Compliance Monitoring</span>

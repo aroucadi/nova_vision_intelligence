@@ -57,6 +57,7 @@ interface GlobalPathwayContextType {
     addScan: () => void;
     addClaim: (claim: Omit<Claim, "status" | "timestamp">) => void;
     sendClaim: (claimId: string) => Promise<void>;
+    refreshRegistry: () => Promise<void>;
     refreshPulse: () => Promise<void>;
 }
 
@@ -151,6 +152,54 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
         setActivityLog(prev => [log, ...prev].slice(0, 15));
     };
 
+    const refreshRegistry = async () => {
+        try {
+            const res = await fetch("/api/act/registry");
+            const data = await res.json();
+            if (data.success && Array.isArray(data.entries)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const realEntries = data.entries.map((e: any) => ({
+                    id: e.entryNumber,
+                    status: e.status,
+                    description: `${e.items.length} Items (Duty: $${e.totalDuty})`,
+                    timestamp: new Date(e.timestamp)
+                }));
+
+                setActiveEntries(realEntries);
+
+                setMetrics(prev => ({
+                    ...prev,
+                    filings: INITIAL_METRICS.filings + realEntries.length
+                }));
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const recentLogs = data.entries.slice(0, 5).map((e: any) => ({
+                    id: `reg-${e.entryNumber}`,
+                    time: "Recently",
+                    agent: "Nova Act",
+                    action: `Filed Entry #${e.entryNumber} (${e.status})`,
+                    status: "Success"
+                }));
+
+                if (recentLogs.length > 0) {
+                    setActivityLog(prev => {
+                        const allLogs = [...recentLogs, ...prev];
+                        const uniqueMap = new Map();
+                        allLogs.forEach(log => {
+                            if (!uniqueMap.has(log.id)) {
+                                uniqueMap.set(log.id, log);
+                            }
+                        });
+                        const uniqueLogs = Array.from(uniqueMap.values()) as ActivityLog[];
+                        return uniqueLogs.slice(0, 15);
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Failed to sync registry:", err);
+        }
+    };
+
     const refreshPulse = async () => {
         try {
             const res = await fetch("/api/intelligence/pulse");
@@ -163,73 +212,6 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // 4. "100% Real" Registry Sync
-    React.useEffect(() => {
-        const syncRegistry = async () => {
-            try {
-                const res = await fetch("/api/act/registry");
-                const data = await res.json();
-                if (data.success && Array.isArray(data.entries)) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const realEntries = data.entries.map((e: any) => ({
-                        id: e.entryNumber,
-                        status: e.status,
-                        description: `${e.items.length} Items (Duty: $${e.totalDuty})`,
-                        timestamp: new Date(e.timestamp)
-                    }));
-
-                    setActiveEntries(realEntries);
-
-                    // Update metrics based on real data
-                    setMetrics(prev => ({
-                        ...prev,
-                        filings: INITIAL_METRICS.filings + realEntries.length
-                    }));
-
-                    // Prepend to activity log if recent
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const recentLogs = data.entries.slice(0, 5).map((e: any) => ({
-                        id: `reg-${e.entryNumber}`,
-                        time: "Recently",
-                        agent: "Nova Act",
-                        action: `Filed Entry #${e.entryNumber} (${e.status})`,
-                        status: "Success"
-                    }));
-
-                    if (recentLogs.length > 0) {
-                        // Merge with initial logs but avoid duplicates if possible (simple prepend here)
-                        setActivityLog(prev => {
-                            const allLogs = [...recentLogs, ...prev];
-                            const uniqueMap = new Map();
-                            allLogs.forEach(log => {
-                                if (!uniqueMap.has(log.id)) {
-                                    uniqueMap.set(log.id, log);
-                                }
-                            });
-                            const uniqueLogs = Array.from(uniqueMap.values()) as ActivityLog[];
-                            return uniqueLogs.slice(0, 15);
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to sync registry:", err);
-            }
-        };
-
-        syncRegistry();
-        // Poll every 5 seconds to keep dashboard alive with "Real" state
-        const interval = setInterval(syncRegistry, 5000);
-        return () => clearInterval(interval);
-    }, []);
-
-    // 5. Intelligence Pulse Sync (Real Port Data)
-    React.useEffect(() => {
-        refreshPulse();
-        // Poll for fresh world news every 2 minutes (Logistics moves fast, but not *that* fast)
-        const pulseInterval = setInterval(refreshPulse, 120000);
-        return () => clearInterval(pulseInterval);
-    }, []);
-
     const value = React.useMemo(() => ({
         metrics,
         activityLog,
@@ -241,6 +223,7 @@ export function GlobalPathwayProvider({ children }: { children: ReactNode }) {
         addScan,
         addClaim,
         sendClaim,
+        refreshRegistry,
         refreshPulse
     }), [metrics, activityLog, activeEntries, claims, intelligencePulse]);
 

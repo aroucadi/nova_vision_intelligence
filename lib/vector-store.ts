@@ -23,7 +23,7 @@ export class SimpleVectorStore {
     private readonly s3Client: S3Client | null = null;
     private readonly bucketName: string | undefined;
     private readonly s3Key = "vector-store/index.json";
-    private initPromise: Promise<void>;
+    private initPromise: Promise<void> | null = null;
 
     private constructor() {
         // Determine persistence path (temp dir for Vercel/Serverless compatibility)
@@ -35,8 +35,6 @@ export class SimpleVectorStore {
         if (this.bucketName) {
             this.s3Client = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
         }
-
-        this.initPromise = this.load();
     }
 
     public static getInstance(): SimpleVectorStore {
@@ -50,7 +48,7 @@ export class SimpleVectorStore {
      * Add a document to the store
      */
     async addDocument(text: string, metadata: Record<string, any> = {}): Promise<string> {
-        await this.initPromise;
+        await this.ensureInit();
         const embedding = await novaEmbeddings.generateEmbedding({ text });
 
         const doc: VectorDocument = {
@@ -70,7 +68,7 @@ export class SimpleVectorStore {
      * Search for similar documents
      */
     async search(query: string, limit: number = 3): Promise<SearchResult[]> {
-        await this.initPromise;
+        await this.ensureInit();
         if (this.documents.length === 0) {
             return [];
         }
@@ -96,7 +94,9 @@ export class SimpleVectorStore {
         const dotProduct = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
         const magnitudeA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
         const magnitudeB = Math.sqrt(vecB.reduce((sum, b) => sum + b * b, 0));
-        return dotProduct / (magnitudeA * magnitudeB);
+        const denom = magnitudeA * magnitudeB;
+        if (denom === 0) return 0;
+        return dotProduct / denom;
     }
 
     /**
@@ -160,8 +160,16 @@ export class SimpleVectorStore {
      * Clear the store (useful for testing)
      */
     async clear() {
+        await this.ensureInit();
         this.documents = [];
         await this.save();
+    }
+
+    private async ensureInit() {
+        if (!this.initPromise) {
+            this.initPromise = this.load();
+        }
+        await this.initPromise;
     }
 }
 

@@ -1,7 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { guardApiRequest } from "@/lib/security/api-guard";
+import { rateLimiter } from "@/lib/rate-limit";
+import { getRateLimitKey } from "@/lib/security/rate-limit-key";
+import { createApiLog } from "@/lib/observability/api-log";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const guard = guardApiRequest(request);
+    if (!guard.ok) return guard.response;
+    const apiLog = createApiLog(request, "/api/act/types", guard.principal);
+
+    const isAllowed = await rateLimiter.check(60, getRateLimitKey(request));
+    if (!isAllowed) {
+        apiLog.end(429);
+        return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     // Return static workflow types directly (Ported from legacy python service)
+    apiLog.end(200);
     return NextResponse.json({
         types: [
             {

@@ -11,6 +11,8 @@ export interface EmbeddingOptions {
 
 export class NovaEmbeddings {
     private client: BedrockRuntimeClient;
+    private textCache: Map<string, number[]> = new Map();
+    private maxCacheEntries = 200;
 
     constructor(region: string = process.env.AWS_REGION || "us-east-1") {
         this.client = new BedrockRuntimeClient({ region });
@@ -26,6 +28,12 @@ export class NovaEmbeddings {
     }): Promise<number[]> {
         if (!input.text && !input.image) {
             throw new Error("Either text or image must be provided for embeddings");
+        }
+
+        if (input.text && !input.image) {
+            const key = input.text.trim();
+            const cached = this.textCache.get(key);
+            if (cached) return cached;
         }
 
         try {
@@ -50,7 +58,16 @@ export class NovaEmbeddings {
             const result = JSON.parse(new TextDecoder().decode(response.body));
 
             // Nova Embeddings returns { embedding: number[] }
-            return result.embedding;
+            const embedding = result.embedding as number[];
+            if (input.text && !input.image) {
+                const key = input.text.trim();
+                this.textCache.set(key, embedding);
+                if (this.textCache.size > this.maxCacheEntries) {
+                    const firstKey = this.textCache.keys().next().value;
+                    if (firstKey) this.textCache.delete(firstKey);
+                }
+            }
+            return embedding;
         } catch (error: any) {
             console.error("Embedding generation failed:", error.message || error);
             throw error;

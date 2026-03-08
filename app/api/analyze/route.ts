@@ -13,6 +13,10 @@ import {
 import { videoAuditService } from "@/lib/nova/video-audit";
 
 import { z } from "zod";
+import { guardApiRequest } from "@/lib/security/api-guard";
+import { fetchArrayBufferWithLimits } from "@/lib/security/safe-fetch";
+import { getRateLimitKey } from "@/lib/security/rate-limit-key";
+import { createApiLog } from "@/lib/observability/api-log";
 
 const analyzeSchema = z.object({
     fileUrl: z.string().url(),
@@ -22,11 +26,16 @@ const analyzeSchema = z.object({
 import { rateLimiter } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+    let apiLog: ReturnType<typeof createApiLog> | null = null;
     try {
+        const guard = guardApiRequest(request);
+        if (!guard.ok) return guard.response;
+        apiLog = createApiLog(request, "/api/analyze", guard.principal);
+
         // Rate Limit Check
-        const ip = request.headers.get("x-forwarded-for") || "unknown";
-        const isAllowed = await rateLimiter.check(10, ip); // 10 requests per minute
+        const isAllowed = await rateLimiter.check(10, getRateLimitKey(request)); // 10 requests per minute
         if (!isAllowed) {
+            apiLog.end(429);
             return NextResponse.json({ error: "Too many requests" }, { status: 429 });
         }
 
@@ -34,6 +43,7 @@ export async function POST(request: NextRequest) {
         const validation = analyzeSchema.safeParse(body);
 
         if (!validation.success) {
+            apiLog.end(400);
             return NextResponse.json(
                 { error: "Invalid input", details: validation.error.format() },
                 { status: 400 }
@@ -42,32 +52,21 @@ export async function POST(request: NextRequest) {
 
         const { fileUrl, analysisType } = validation.data;
 
-        // SSRF PROTECTION: Restrict to authorized S3/Amplify/AWS domains
-        const url = new URL(fileUrl);
-        const allowedHosts = [
-            "s3.amazonaws.com",
-            "amplifyapp.com",
-            "localhost",
-            "127.0.0.1"
-        ];
-        const isAuthorized = allowedHosts.some(host => url.host.endsWith(host));
-
-        if (!isAuthorized) {
-            console.warn(`[SSRF] Unauthorized host blocked: ${url.host}`);
-            return NextResponse.json({ error: "Access denied: Unauthorized file source" }, { status: 403 });
-        }
-
         const startTime = Date.now();
 
         // Fetch file from storage
-        const fileResponse = await fetch(fileUrl);
-        if (!fileResponse.ok) {
-            throw new Error(`Failed to fetch file: ${fileResponse.statusText}`);
+        const fetchRes = await fetchArrayBufferWithLimits(fileUrl, {
+            maxBytes: analysisType === "video" ? 50 * 1024 * 1024 : 15 * 1024 * 1024,
+            timeoutMs: 15000
+        });
+        if (!fetchRes.ok) {
+            apiLog.end(fetchRes.response.status);
+            return fetchRes.response;
         }
 
-        const fileBuffer = await fileResponse.arrayBuffer();
+        const fileBuffer = fetchRes.bytes;
         const base64 = bufferToBase64(fileBuffer);
-        const contentType = fileResponse.headers.get("content-type") || "";
+        const contentType = fetchRes.contentType || "";
 
         // Determine file type from URL
         const urlPath = new URL(fileUrl).pathname;
@@ -133,6 +132,7 @@ export async function POST(request: NextRequest) {
         } else if (isDocumentFile(filename)) {
             const format = getDocFormat(filename);
             if (!format) {
+                apiLog?.end(400);
                 return NextResponse.json(
                     { error: "Unsupported document format" },
                     { status: 400 }
@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
             type SupportedDocFormat = typeof supportedDocFormats[number];
 
             if (!supportedDocFormats.includes(format as SupportedDocFormat)) {
+                apiLog?.end(400);
                 return NextResponse.json(
                     { error: `Document format "${format}" is not supported for analysis` },
                     { status: 400 }
@@ -168,6 +169,7 @@ export async function POST(request: NextRequest) {
                 usage: { inputTokens: 0, outputTokens: 0 } // Video audit wraps usage internally
             };
         } else {
+            apiLog?.end(400);
             return NextResponse.json(
                 { error: "Unsupported file type for analysis" },
                 { status: 400 }
@@ -176,6 +178,7 @@ export async function POST(request: NextRequest) {
 
         const processingTimeMs = Date.now() - startTime;
 
+        apiLog?.end(200, { analysisType, processingTimeMs });
         return NextResponse.json({
             success: true,
             analysis: {
@@ -191,6 +194,7 @@ export async function POST(request: NextRequest) {
         console.error("Analysis error:", error);
         const message =
             error instanceof Error ? error.message : "Analysis failed";
+        apiLog?.end(500);
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

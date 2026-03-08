@@ -59,16 +59,34 @@ export default function ClearancePage() {
                 body: JSON.stringify({ fileUrl: uploadedFile.url }),
             });
 
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({ error: "Request failed" }));
+                toast.error("Pipeline Failed", { description: err.error || "Request failed" });
+                return;
+            }
+
             const data = await response.json();
 
             if (data.success) {
                 setPipeline(data.pipeline);
+            } else {
+                toast.error("Pipeline Failed", { description: data.error || "Unknown error" });
             }
         } catch (error) {
-            console.error("Pipeline error:", error);
+            toast.error("Pipeline Failed", { description: "Network error" });
         } finally {
             setAnalyzing(false);
         }
+    };
+
+    const refreshPipeline = async () => {
+        if (!pipeline?.pipelineId) return;
+        try {
+            const response = await fetch(`/api/agents/state?pipelineId=${encodeURIComponent(pipeline.pipelineId)}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (data.success) setPipeline(data.pipeline);
+        } catch { }
     };
 
     const [filingResult, setFilingResult] = useState<{ transactionId: string; declaration: any } | null>(null);
@@ -80,8 +98,16 @@ export default function ClearancePage() {
 
         try {
             // Find the extraction result to send to Act
-            const extractTask = pipeline.tasks.find(t => t.id === "extractor" || t.name === "Customs Broker");
-            const shipmentData = extractTask?.result ? JSON.parse(extractTask.result as string) : {};
+            const extractTask = pipeline.tasks.find(t => t.agentId === "extractor");
+            if (!extractTask?.result) {
+                setFilingStatus("idle");
+                toast.error("Filing Failed", {
+                    description: "No extraction result available to file."
+                });
+                return;
+            }
+
+            const shipmentData = JSON.parse(extractTask.result as string);
 
             const response = await fetch("/api/act/trigger", {
                 method: "POST",
@@ -97,7 +123,7 @@ export default function ClearancePage() {
 
                 // UPDATE GLOBAL STATE
                 addFiling(
-                    data.declaration?.entry_number || "998877",
+                    data.declaration?.entryNumber || "998877",
                     "Auto-filed via Nova Act (Standard Import)"
                 );
                 toast.success("Customs Entry Filed Successfully", {
@@ -182,6 +208,18 @@ export default function ClearancePage() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                             >
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="text-xs text-zinc-500 font-mono">
+                                        Pipeline ID: {pipeline.pipelineId}
+                                    </div>
+                                    <Button
+                                        onClick={refreshPipeline}
+                                        variant="outline"
+                                        className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                                    >
+                                        Refresh
+                                    </Button>
+                                </div>
                                 <AgentPipeline pipeline={pipeline} />
 
                                 {/* THE "ACT" STEP: Port Authority Filing */}
@@ -220,9 +258,9 @@ export default function ClearancePage() {
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center text-emerald-400 font-bold">
                                                         <Shield className="h-5 w-5 mr-2" />
-                                                        Filing Accepted (#{filingResult.declaration?.entry_number || "998877"})
+                                                        Filing Accepted (#{filingResult.declaration?.entryNumber || "998877"})
                                                     </div>
-                                                    <Link href={`/warehouse?ref=${filingResult.declaration?.entry_number || "998877"}`}>
+                                                    <Link href={`/warehouse?ref=${filingResult.declaration?.entryNumber || "998877"}`}>
                                                         <Button size="lg" variant="outline" className="border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10">
                                                             Track in Warehouse <ArrowRight className="ml-2 h-4 w-4" />
                                                         </Button>

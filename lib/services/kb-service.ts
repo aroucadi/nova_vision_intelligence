@@ -22,12 +22,8 @@ export class KnowledgeBaseService {
 
     constructor() {
         const region = process.env.AWS_REGION || "us-east-1";
-        const credentials = {
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        };
-        this.runtimeClient = new BedrockAgentRuntimeClient({ region, credentials });
-        this.agentClient = new BedrockAgentClient({ region, credentials });
+        this.runtimeClient = new BedrockAgentRuntimeClient({ region });
+        this.agentClient = new BedrockAgentClient({ region });
         this.kbId = process.env.KNOWLEDGE_BASE_ID || "";
         this.dataSourceId = process.env.DATA_SOURCE_ID || "";
     }
